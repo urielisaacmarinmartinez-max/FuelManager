@@ -42,7 +42,7 @@ app.post('/api/orders', async (req, res) => {
 
 // 3. CONEXIÓN FINAL (LINK DE COMPATIBILIDAD PRO)
 // Este link ignora el error querySrv y conecta directo a los nodos
-const URI = "mongodb://UrielMarin:GMC1598@polimotorsproject-shard-00-00.t03yona.mongodb.net:27017,polimotorsproject-shard-00-01.t03yona.mongodb.net:27017,polimotorsproject-shard-00-02.t03yona.mongodb.net:27017/mobil_db?ssl=true&replicaSet=atlas-t03yona-shard-0&authSource=admin&retryWrites=true&w=majority";
+const URI = "mongodb://User23:Test1598@polimotorsproject-shard-00-00.t03yona.mongodb.net:27017,polimotorsproject-shard-00-01.t03yona.mongodb.net:27017,polimotorsproject-shard-00-02.t03yona.mongodb.net:27017/mobil_db?ssl=true&replicaSet=atlas-t03yona-shard-0&authSource=admin&retryWrites=true&w=majority";
 
 console.log('⏳ Intentando conectar a la base de datos...');
 
@@ -59,4 +59,5 @@ mongoose.connect(URI)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+
 });
