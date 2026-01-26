@@ -2,62 +2,31 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import axios from 'axios';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. MODELO DE DATOS
-const orderSchema = new mongoose.Schema({
-  customerName: String,
-  fuelType: String,
-  gallons: Number,
-  createdAt: { type: Date, default: Date.now }
-});
-const Order = mongoose.model('Order', orderSchema);
+// --- ESTO SIRVE TU PORTAL WEB ---
+app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. RUTA PARA RECIBIR PEDIDOS
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { customerName, fuelType, gallons } = req.body;
-
-    // A. Guardar en MongoDB Atlas
-    const newOrder = new Order({ customerName, fuelType, gallons });
-    await newOrder.save();
-    console.log('✅ Pedido guardado en MongoDB');
-
-    // B. Enviar a Google Sheets
-    const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbwgJ5HvENym0-QX_esnFnqq2mHWDlz2p_9UPHWQbC8xUCVgfZCqBnws_1WY86OJrLwawg/exec'; 
-    
-    await axios.post(GOOGLE_URL, { customerName, fuelType, gallons });
-    console.log('📊 Datos enviados a Google Sheets');
-
-    res.status(201).json({ message: 'Pedido procesado', order: newOrder });
-  } catch (error) {
-    console.error('❌ Error en el proceso:', error.message);
-    res.status(500).json({ error: 'Fallo al procesar pedido' });
-  }
+// Ruta para la base de datos (tu API)
+app.post('/api/pedido', async (req, res) => {
+    console.log("Datos recibidos:", req.body);
+    // Aquí irá tu lógica para Guardar en Mongo y Google Sheets
+    res.json({ mensaje: "✅ Pedido recibido en el servidor" });
 });
 
-// 3. CONEXIÓN FINAL (LINK DE COMPATIBILIDAD PRO)
-// Este link ignora el error querySrv y conecta directo a los nodos
-const URI = "mongodb://User23:Test1598@polimotorsproject-shard-00-00.t03yona.mongodb.net:27017,polimotorsproject-shard-00-01.t03yona.mongodb.net:27017,polimotorsproject-shard-00-02.t03yona.mongodb.net:27017/mobil_db?ssl=true&replicaSet=atlas-t03yona-shard-0&authSource=admin&retryWrites=true&w=majority";
-
-console.log('⏳ Intentando conectar a la base de datos...');
-
+// CONEXIÓN A MONGO
+const URI = process.env.MONGODB_URI;
 mongoose.connect(URI)
-  .then(() => {
-    console.log('**********************************************');
-    console.log('✅ EXITO: MOBIL conectado a MongoDB Atlas');
-    console.log('**********************************************');
-  })
-  .catch((err) => {
-    console.error('❌ Error crítico de conexión:', err.message);
-  });
+  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+  .catch(err => console.error('❌ Error de conexión:', err));
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-
-});
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`🚀 Servidor listo en puerto ${PORT}`));

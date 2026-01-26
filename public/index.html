@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOBIL APP</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Bienvenido a MOBIL</h1>
+        <p>Registra tu pedido aquí</p>
+        <button onclick="enviarDatos()">Enviar Pedido</button>
+    </div>
+
+    <script>
+        function enviarDatos() {
+            // Aquí usaremos el link de Render que ya tienes
+            fetch('https://mobil-backend-3egl.onrender.com/api/pedido', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ producto: "Galones", cantidad: 1 })
+            })
+            .then(res => alert("¡Pedido enviado con éxito!"));
+        }
+    </script>
+</body>
+</html>
