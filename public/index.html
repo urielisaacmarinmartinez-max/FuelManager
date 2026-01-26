@@ -99,5 +99,36 @@
             </div>
         </main>
     </div>
+    <script>
+    // Función para el botón "+ Nuevo Pedido"
+    document.querySelector('button.bg-red-600').onclick = function() {
+        const nombre = prompt("Nombre del Cliente:");
+        const cantidad = prompt("Cantidad de Galones:");
+
+        if (nombre && cantidad) {
+            // Enviamos los datos a tu servidor de Render
+            fetch('/api/pedido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    cliente: nombre, 
+                    galones: cantidad,
+                    fecha: new Date().toLocaleString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => alert("✅ Pedido guardado: " + data.mensaje))
+            .catch(err => alert("❌ Error al conectar con el servidor"));
+        }
+    };
+
+    // Función para el Sidebar (Opcional por ahora)
+    document.querySelectorAll('nav a').forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            alert("Navegando a: " + link.innerText.trim());
+        };
+    });
+</script>
 </body>
 </html>
