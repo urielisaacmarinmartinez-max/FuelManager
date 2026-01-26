@@ -3,233 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOBIL - Portal de Estación</title>
+    <title>POLIMOTORS | Portal de Estación</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; }
         .side-panel-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .sidebar-item-active { background: #f8fafc; color: #dc2626; border-right: 4px solid #dc2626; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        .tank-gradient { background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); }
     </style>
 </head>
-<body class="bg-[#f8f9fa] font-sans text-slate-900 overflow-hidden">
+<body class="bg-[#F3F4F6] text-slate-900 h-screen overflow-hidden flex">
 
-    <div class="flex h-screen">
-        
-        <aside class="w-72 bg-white border-r border-slate-200 hidden lg:flex flex-col">
-            <div class="p-6 border-b border-slate-50">
-                <div class="flex items-center gap-3">
-                    <div class="bg-red-600 p-2 rounded-lg text-white">
-                        <i class="fas fa-gas-pump text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-slate-800 leading-tight">MOBIL Pedidos</h1>
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Portal de Estación</p>
-                    </div>
+    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col hidden lg:flex">
+        <div class="p-8">
+            <div class="flex items-center gap-3 mb-12">
+                <div class="h-10 w-10 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-200">
+                    <i class="fas fa-gas-pump"></i>
                 </div>
+                <span class="font-black text-xl tracking-tighter">POLIMOTORS</span>
             </div>
 
-            <div class="p-6">
-                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl mb-6">
-                    <div class="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500">U</div>
-                    <div class="overflow-hidden">
-                        <p class="text-xs font-bold truncate">Uriel Marin</p>
-                        <p class="text-[10px] text-slate-400 truncate">Gerente de Zona</p>
-                    </div>
-                </div>
+            <nav class="space-y-2">
+                <a href="#" class="flex items-center gap-4 p-4 bg-slate-100 text-slate-900 rounded-2xl font-semibold transition-all">
+                    <i class="fas fa-chart-pie opacity-50"></i> Dashboard
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl transition-all">
+                    <i class="fas fa-store opacity-50"></i> Mis Estaciones
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl transition-all">
+                    <i class="fas fa-list-ul opacity-50"></i> Mis Pedidos
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl transition-all">
+                    <i class="fas fa-wallet opacity-50"></i> Créditos
+                </a>
+            </nav>
+        </div>
 
-                <nav class="space-y-1">
-                    <a href="#" class="flex items-center gap-3 p-3 sidebar-item-active font-bold rounded-xl transition-all">
-                        <i class="fas fa-th-large w-5"></i> Dashboard
-                    </a>
-                    <a href="#" onclick="showSection('estaciones')" class="flex items-center gap-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
-                        <i class="fas fa-store w-5"></i> Mis Estaciones
-                    </a>
-                    <a href="#" onclick="togglePanel()" class="flex items-center gap-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all font-bold text-red-600">
-                        <i class="fas fa-plus-circle w-5"></i> Nuevo Pedido
-                    </a>
-                    <a href="#" class="flex items-center gap-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
-                        <i class="fas fa-clipboard-list w-5"></i> Mis Pedidos
-                    </a>
-                    <a href="#" class="flex items-center gap-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
-                        <i class="fas fa-credit-card w-5"></i> Créditos
-                    </a>
-                </nav>
-            </div>
-
-            <div class="mt-auto p-6 space-y-4">
-                <div class="bg-red-600 rounded-2xl p-4 text-white shadow-lg shadow-red-100">
-                    <p class="text-xs font-bold mb-1">¿Necesitas ayuda?</p>
-                    <p class="text-[10px] opacity-80 mb-3">Contacta a soporte técnico</p>
-                    <button class="w-full bg-white/20 hover:bg-white/30 py-2 rounded-lg text-xs font-bold transition-all">Soporte</button>
-                </div>
-                <button class="flex items-center gap-3 p-3 text-slate-400 hover:text-red-600 w-full transition-all">
-                    <i class="fas fa-sign-out-alt"></i> <span class="text-sm font-bold">Cerrar Sesión</span>
-                </button>
-            </div>
-        </aside>
-
-        <main class="flex-1 h-screen overflow-y-auto p-4 md:p-10">
-            <header class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-black text-slate-800">Dashboard</h2>
-                <button onclick="togglePanel()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-red-200 hover:scale-105 transition-all">
-                    + Nuevo Pedido
-                </button>
-            </header>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">Pendientes</span>
-                        <i class="far fa-clock text-amber-500"></i>
-                    </div>
-                    <div class="text-3xl font-black">3</div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">En Ruta</span>
-                        <i class="fas fa-truck text-blue-500"></i>
-                    </div>
-                    <div class="text-3xl font-black">2</div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-[10px] font-black text-slate-400 uppercase">Entregados</span>
-                        <i class="fas fa-check-circle text-emerald-500"></i>
-                    </div>
-                    <div class="text-3xl font-black">4</div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter text-red-600">Crédito Global</span>
-                    </div>
-                    <div class="text-2xl font-black">$2.014.254</div>
-                </div>
-            </div>
-
-            <h3 class="text-lg font-black mb-6 text-slate-800">Mis Estaciones</h3>
-            <div id="gridEstaciones" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-red-200 transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h4 class="font-black text-xl">Estación Norte - PMC</h4>
-                            <p class="text-xs text-slate-400">Av. Industrial #455</p>
-                        </div>
-                        <div class="bg-slate-900 text-white text-[10px] px-3 py-1 rounded-full font-black">ID: 2601</div>
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-4 mb-6">
-                        <div class="text-center">
-                            <p class="text-[10px] font-black text-slate-400 mb-2">EXTRA</p>
-                            <div class="h-24 bg-slate-50 rounded-2xl relative overflow-hidden">
-                                <div class="absolute bottom-0 w-full bg-emerald-500 transition-all duration-1000" style="height: 75%"></div>
-                                <input type="number" value="75" class="absolute inset-0 bg-transparent text-center font-black text-xs outline-none focus:text-white" onchange="updateTank(this, 'Extra')">
-                            </div>
-                            <span class="text-[10px] font-bold mt-1 inline-block">75%</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-[10px] font-black text-slate-400 mb-2">SUPREME</p>
-                            <div class="h-24 bg-slate-50 rounded-2xl relative overflow-hidden">
-                                <div class="absolute bottom-0 w-full bg-red-500 transition-all duration-1000" style="height: 40%"></div>
-                                <input type="number" value="40" class="absolute inset-0 bg-transparent text-center font-black text-xs outline-none focus:text-white" onchange="updateTank(this, 'Supreme')">
-                            </div>
-                            <span class="text-[10px] font-bold mt-1 inline-block">40%</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-[10px] font-black text-slate-400 mb-2">DIESEL</p>
-                            <div class="h-24 bg-slate-50 rounded-2xl relative overflow-hidden">
-                                <div class="absolute bottom-0 w-full bg-slate-800 transition-all duration-1000" style="height: 90%"></div>
-                                <input type="number" value="90" class="absolute inset-0 bg-transparent text-center font-black text-xs outline-none focus:text-white" onchange="updateTank(this, 'Diesel')">
-                            </div>
-                            <span class="text-[10px] font-bold mt-1 inline-block">90%</span>
-                        </div>
-                    </div>
-                    <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-400">Crédito Estación:</span>
-                        <span class="text-sm font-black text-emerald-600">$500,000.00</span>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <div id="overlay" onclick="togglePanel()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"></div>
-        <div id="sidePanel" class="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl side-panel-transition translate-x-full overflow-y-auto p-8">
-            <div class="flex justify-between items-center mb-10">
-                <h3 class="text-2xl font-black text-slate-800">Nuevo Pedido</h3>
-                <button onclick="togglePanel()" class="text-slate-400"><i class="fas fa-times text-xl"></i></button>
-            </div>
-
-            <form id="orderForm" class="space-y-6">
+        <div class="mt-auto p-8 border-t border-slate-100">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="h-10 w-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500">UM</div>
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Seleccionar Estación</label>
-                    <select id="selEstacion" onchange="loadStationConfig()" required class="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold mt-2">
-                        <option value="">Elegir sucursal...</option>
-                        <option value="norte">Estación Norte - PMC</option>
-                        <option value="sur">Estación Sur - PMC</option>
+                    <p class="text-sm font-bold">Uriel Marín</p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Estación Norte</p>
+                </div>
+            </div>
+            <button class="w-full text-left text-sm text-slate-400 hover:text-red-600 transition-colors font-bold">
+                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-8 lg:p-12">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-4xl font-black tracking-tight">Dashboard</h1>
+                <p class="text-slate-400 font-medium">Resumen operativo de tus estaciones</p>
+            </div>
+            <button onclick="togglePanel()" class="bg-red-600 text-white px-8 py-4 rounded-2xl font-bold shadow-2xl shadow-red-200 hover:scale-105 active:scale-95 transition-all">
+                + Nuevo Pedido
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Crédito Global</p>
+                <p class="text-3xl font-black">$2,014,254</p>
+            </div>
+            </div>
+
+        <div class="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100 mb-12">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black">Niveles de Inventario</h2>
+                <span class="text-xs font-bold text-slate-400">Actualizado: hace 5 min</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-xs font-black text-blue-600 uppercase tracking-widest mb-1">Extra</p>
+                            <p class="text-2xl font-black" id="extraLabel">15,000 L</p>
+                        </div>
+                        <p class="text-slate-400 text-xs font-bold">Cap: 20,000 L</p>
+                    </div>
+                    <div class="h-4 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="extraBar" class="h-full tank-gradient transition-all duration-1000" style="width: 75%"></div>
+                    </div>
+                    <input type="number" onchange="updateTank('extra', this.value, 20000)" placeholder="Ingresar volumen actual" class="w-full p-4 bg-slate-50 rounded-2xl border-none text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Supreme</p>
+                            <p class="text-2xl font-black" id="supremeLabel">8,000 L</p>
+                        </div>
+                        <p class="text-slate-400 text-xs font-bold">Cap: 20,000 L</p>
+                    </div>
+                    <div class="h-4 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="supremeBar" class="h-full bg-red-600 transition-all duration-1000" style="width: 40%"></div>
+                    </div>
+                    <input type="number" onchange="updateTank('supreme', this.value, 20000)" placeholder="Ingresar volumen actual" class="w-full p-4 bg-slate-50 rounded-2xl border-none text-sm font-bold outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Diesel</p>
+                            <p class="text-2xl font-black" id="dieselLabel">18,000 L</p>
+                        </div>
+                        <p class="text-slate-400 text-xs font-bold">Cap: 20,000 L</p>
+                    </div>
+                    <div class="h-4 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="dieselBar" class="h-full bg-slate-800 transition-all duration-1000" style="width: 90%"></div>
+                    </div>
+                    <input type="number" onchange="updateTank('diesel', this.value, 20000)" placeholder="Ingresar volumen actual" class="w-full p-4 bg-slate-50 rounded-2xl border-none text-sm font-bold outline-none focus:ring-2 focus:ring-slate-800">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="overlay" onclick="togglePanel()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"></div>
+    <div id="sidePanel" class="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl side-panel-transition translate-x-full p-10 overflow-y-auto">
+        <div class="flex justify-between items-center mb-12">
+            <h2 class="text-3xl font-black tracking-tight">Nuevo Pedido</h2>
+            <button onclick="togglePanel()" class="text-slate-300 hover:text-slate-900 transition-colors"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+
+        <form id="orderForm" class="space-y-8">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estación de Origen</label>
+                <select id="selEstacion" onchange="loadConfig()" class="w-full p-5 bg-slate-50 rounded-[1.5rem] font-bold border-none outline-none focus:ring-2 focus:ring-red-500 transition-all appearance-none">
+                    <option value="">Elegir sucursal...</option>
+                    <option value="norte">Estación Norte - PMC</option>
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dirección (Automática)</label>
+                <textarea id="dirAuto" readonly class="w-full p-5 bg-slate-50 rounded-[1.5rem] text-slate-400 text-sm font-medium resize-none border-none">Selecciona una estación...</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Combustible</label>
+                    <select id="fuelType" onchange="calcTotal()" class="w-full p-5 bg-slate-50 rounded-[1.5rem] font-bold border-none outline-none">
+                        <option>Extra</option>
+                        <option>Supreme</option>
+                        <option>Diesel</option>
                     </select>
                 </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Precio Unitario</label>
+                    <input id="fuelPrice" type="text" readonly class="w-full p-5 bg-slate-50 rounded-[1.5rem] font-black text-red-600 border-none">
+                </div>
+            </div>
 
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cantidad a Solicitar (L)</label>
+                <input id="fuelQty" type="number" oninput="calcTotal()" required class="w-full p-5 bg-slate-50 rounded-[1.5rem] font-black border-none focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div class="p-8 bg-slate-900 rounded-[2rem] text-white flex justify-between items-center">
                 <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dirección de Entrega</label>
-                    <textarea id="dirAuto" readonly class="w-full p-4 bg-slate-100 border-none rounded-2xl mt-2 text-sm text-slate-500 italic">Seleccione una estación para cargar la dirección...</textarea>
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Total a Pagar</p>
+                    <p id="finalTotal" class="text-3xl font-black">$0.00</p>
                 </div>
+                <i class="fas fa-receipt text-slate-700 text-3xl"></i>
+            </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Tipo</label>
-                        <select id="fuelType" onchange="calcTotal()" class="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold mt-2">
-                            <option>Extra</option>
-                            <option>Supreme</option>
-                            <option>Diesel</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Precio/L (Inmanipulable)</label>
-                        <input id="fuelPrice" type="text" readonly class="w-full p-4 bg-slate-100 border-none rounded-2xl font-black text-red-600 mt-2">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Cantidad (Litros)</label>
-                    <input id="fuelQty" type="number" oninput="calcTotal()" required class="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold mt-2">
-                </div>
-
-                <div class="bg-emerald-50 p-4 rounded-2xl flex justify-between items-center">
-                    <span class="text-xs font-black text-emerald-800">Total Estimado:</span>
-                    <span id="finalTotal" class="text-xl font-black text-emerald-600">$0.00</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Fecha Deseada</label>
-                        <input type="date" required class="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold mt-2">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Prioridad</label>
-                        <select class="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold mt-2">
-                            <option>Normal</option>
-                            <option>Urgente</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase">Notas de Entrega</label>
-                    <textarea id="notes" class="w-full p-4 bg-slate-50 border-none rounded-2xl mt-2" placeholder="Indicaciones especiales..."></textarea>
-                </div>
-
-                <button type="submit" id="btnConfirm" class="w-full bg-slate-900 text-white p-5 rounded-[2rem] font-black text-lg shadow-xl hover:bg-red-600 transition-all">
-                    Confirmar Pedido
-                </button>
-            </form>
-        </div>
+            <button type="submit" id="btnConfirm" class="w-full bg-red-600 text-white p-6 rounded-[2rem] font-black text-xl shadow-xl shadow-red-100 hover:bg-red-700 transition-all transform active:scale-95">
+                Confirmar Orden
+            </button>
+        </form>
     </div>
 
     <script>
-        const config = {
-            "norte": { dir: "Av. Industrial #455, Zona Norte", precios: { "Extra": 22.5, "Supreme": 24.8, "Diesel": 23.1 }, credito: 500000 },
-            "sur": { dir: "Carr. Federal Km 12, Salida Sur", precios: { "Extra": 22.3, "Supreme": 24.6, "Diesel": 23.0 }, credito: 320000 }
-        };
+        // Lógica de Tanques
+        function updateTank(id, current, capacity) {
+            const percentage = (current / capacity) * 100;
+            document.getElementById(`${id}Bar`).style.width = percentage + '%';
+            document.getElementById(`${id}Label`).innerText = new Intl.NumberFormat().format(current) + ' L';
+            
+            // Colores de alerta
+            if(percentage < 20) document.getElementById(`${id}Bar`).classList.add('bg-red-500');
+            else document.getElementById(`${id}Bar`).classList.remove('bg-red-500');
+        }
 
+        // Lógica del Panel
         function togglePanel() {
             const p = document.getElementById('sidePanel');
             const o = document.getElementById('overlay');
@@ -238,11 +201,15 @@
             setTimeout(() => o.classList.toggle('opacity-100'), 10);
         }
 
-        function loadStationConfig() {
+        // Precios Inmanipulables
+        const stationData = {
+            "norte": { dir: "Av. Industrial #455, Zona Norte", precios: { "Extra": 22.50, "Supreme": 24.80, "Diesel": 23.10 }, credito: 500000 }
+        };
+
+        function loadConfig() {
             const key = document.getElementById('selEstacion').value;
-            const data = config[key];
-            if(data) {
-                document.getElementById('dirAuto').value = data.dir;
+            if(stationData[key]) {
+                document.getElementById('dirAuto').value = stationData[key].dir;
                 calcTotal();
             }
         }
@@ -251,25 +218,20 @@
             const key = document.getElementById('selEstacion').value;
             const type = document.getElementById('fuelType').value;
             const qty = parseFloat(document.getElementById('fuelQty').value) || 0;
-            if(config[key]) {
-                const p = config[key].precios[type];
-                const total = p * qty;
-                document.getElementById('fuelPrice').value = `$${p.toFixed(2)}`;
+            
+            if(stationData[key]) {
+                const price = stationData[key].precios[type];
+                const total = price * qty;
+                document.getElementById('fuelPrice').value = `$${price.toFixed(2)}`;
                 document.getElementById('finalTotal').innerText = `$${total.toLocaleString()}`;
-                
+
                 const btn = document.getElementById('btnConfirm');
-                if(total > config[key].credito) {
-                    btn.disabled = true; btn.innerText = "Crédito Insuficiente"; btn.classList.replace('bg-slate-900', 'bg-slate-400');
+                if(total > stationData[key].credito) {
+                    btn.disabled = true; btn.innerText = "Crédito Excedido"; btn.classList.replace('bg-red-600', 'bg-slate-400');
                 } else {
-                    btn.disabled = false; btn.innerText = "Confirmar Pedido"; btn.classList.replace('bg-slate-400', 'bg-slate-900');
+                    btn.disabled = false; btn.innerText = "Confirmar Orden"; btn.classList.replace('bg-slate-400', 'bg-red-600');
                 }
             }
-        }
-
-        function updateTank(input, type) {
-            const val = input.value;
-            input.previousElementSibling.style.height = val + '%';
-            console.log(`Actualizando tanque ${type} a ${val}% en la base de datos...`);
         }
     </script>
 </body>
