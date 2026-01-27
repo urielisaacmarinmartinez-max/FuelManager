@@ -276,45 +276,80 @@
         }
 
         // DIBUJAR ESTACIONES (TIRILLAS)
-        function dibujarEstaciones() {
-            const container = document.getElementById('estacionesCardsContainer');
-            container.innerHTML = estacionesData.map(est => `
-                <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-                    <div class="flex flex-col md:flex-row justify-between mb-8 gap-4">
-                        <div>
-                            <h2 class="text-2xl font-black text-slate-800">${est.nombre}</h2>
-                            <p class="text-[10px] text-blue-600 font-black uppercase">Última Tirilla: ${est.ultimaActualizacion}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-black text-slate-400 uppercase">Crédito Disp.</p>
-                            <p class="text-xl font-black text-emerald-600">${new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN'}).format(est.credito)}</p>
-                        </div>
+        // 1. FILTRO DE SEGURIDAD Y DIBUJO DE ESTACIONES
+function dibujarEstaciones() {
+    const container = document.getElementById('estacionesCardsContainer');
+    const userData = JSON.parse(localStorage.getItem('usuario'));
+    
+    if (!userData || !userData.estaciones) return;
+
+    // Filtramos para que el usuario solo vea SUS estaciones (ej. "EST_001, EST_002")
+    const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
+    const estacionesFiltradas = estacionesData.filter(est => misEstacionesIds.includes(est.id || est.ID_Estacion));
+
+    if (estacionesFiltradas.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 italic p-8 text-center">No tienes estaciones asignadas.</p>';
+        return;
+    }
+
+    container.innerHTML = estacionesFiltradas.map(est => {
+        // Mapeo de capacidades desde el JSON (Ajusta los nombres si en tu Excel son distintos)
+        const capExtra = est.capacidad_extra || est.capacidad?.extra || 0;
+        const capSupreme = est.capacidad_supreme || est.capacidad?.supreme || 0;
+        const capDiesel = est.capacidad_diesel || est.capacidad?.diesel || 0;
+        
+        const volExtra = est.volumen_extra || est.volumenActual?.extra || 0;
+        const volSupreme = est.volumen_supreme || est.volumenActual?.supreme || 0;
+        const volDiesel = est.volumen_diesel || est.volumenActual?.diesel || 0;
+
+        return `
+            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
+                <div class="flex flex-col md:flex-row justify-between mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800">${est.nombre || est.Nombre}</h2>
+                        <p class="text-[10px] text-blue-600 font-black uppercase tracking-widest">
+                            Última Tirilla: ${est.ultimaActualizacion || 'SIN REGISTRO'}
+                        </p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        ${renderCol('EXTRA', 'emerald', est.capacidad.extra, est.ventaPromedio.extra, est.volumenActual.extra)}
-                        ${renderCol('SUPREME', 'red', est.capacidad.supreme, est.ventaPromedio.supreme, est.volumenActual.supreme)}
-                        ${est.capacidad.diesel > 0 ? renderCol('DIESEL', 'slate', est.capacidad.diesel, est.ventaPromedio.diesel, est.volumenActual.diesel) : '<div class="bg-slate-50 rounded-3xl border border-dashed flex items-center justify-center text-[10px] font-bold text-slate-300 uppercase">Sin Diesel</div>'}
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Crédito Disponible</p>
+                        <p class="text-xl font-black text-emerald-600">
+                            ${new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN'}).format(est.credito)}
+                        </p>
                     </div>
-                    <button onclick="abrirModalTirilla('${est.id}', '${est.nombre}', ${est.capacidad.diesel > 0})" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black shadow-xl">ACTUALIZAR TIRILLA</button>
                 </div>
-            `).join('');
-        }
 
-        function renderCol(n, c, cap, vta, vol) {
-            return `
-                <div class="bg-slate-50 p-5 rounded-3xl">
-                    <p class="text-${c}-600 font-black text-center text-xs mb-3 border-b border-${c}-100 pb-2">${n}</p>
-                    <div class="grid grid-cols-2 text-center mb-3">
-                        <div><p class="text-[8px] font-black text-slate-400 uppercase">Capacidad</p><p class="text-xs font-bold">${cap}L</p></div>
-                        <div><p class="text-[8px] font-black text-slate-400 uppercase">Vta Prom.</p><p class="text-xs font-bold">${vta}L</p></div>
-                    </div>
-                    <div class="bg-white p-3 rounded-xl text-center shadow-sm">
-                        <p class="text-[8px] font-black text-slate-400 uppercase">Volumen Actual</p>
-                        <p class="text-xl font-black text-slate-900">${vol} L</p>
-                    </div>
-                </div>`;
-        }
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    ${renderCol('EXTRA', 'emerald', capExtra, volExtra)}
+                    ${renderCol('SUPREME', 'red', capSupreme, volSupreme)}
+                    ${capDiesel > 0 ? renderCol('DIESEL', 'slate', capDiesel, volDiesel) : 
+                    `<div class="bg-slate-50 rounded-3xl border border-dashed flex items-center justify-center text-[10px] font-bold text-slate-300 uppercase p-8 text-center">Esta estación no maneja Diesel</div>`}
+                </div>
 
+                <button onclick="abrirModalTirilla('${est.id || est.ID_Estacion}', '${est.nombre || est.Nombre}', ${capDiesel > 0})" 
+                        class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-blue-600 transition-all">
+                    ACTUALIZAR VOLUMEN (TIRILLA)
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+// 2. DISEÑO DE COLUMNA (SIN VENTA PROMEDIO)
+function renderCol(nombre, color, capacidad, volumenActual) {
+    return `
+        <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+            <p class="text-${color}-600 font-black text-center text-xs mb-3 border-b border-${color}-100 pb-2 uppercase tracking-widest">${nombre}</p>
+            <div class="text-center mb-4">
+                <p class="text-[8px] font-black text-slate-400 uppercase leading-none">Capacidad de Tanque</p>
+                <p class="text-sm font-bold text-slate-700">${capacidad.toLocaleString()} L</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl text-center shadow-sm">
+                <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Inventario Físico</p>
+                <p class="text-2xl font-black text-slate-900">${volumenActual.toLocaleString()} L</p>
+            </div>
+        </div>`;
+}
         // LÓGICA MODAL TIRILLA
         function abrirModalTirilla(id, nombre, tieneDiesel) {
             document.getElementById('modalEstacionId').value = id;
