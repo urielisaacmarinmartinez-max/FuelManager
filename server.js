@@ -19,7 +19,7 @@ const serviceAccountAuth = new JWT({
 });
 
 // REEMPLAZA ESTE ID CON EL TUYO REAL
-const doc = new GoogleSpreadsheet('TU_ID_DE_HOJA_DE_GOOGLE', serviceAccountAuth);
+const doc = new GoogleSpreadsheet('1GALSgq5RhFv103c307XYeNoorQ5gAzxFR1Q64XMGr7Q', serviceAccountAuth);
 
 // RUTA DE LOGIN
 app.post('/api/login', async (req, res) => {
