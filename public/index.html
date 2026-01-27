@@ -11,8 +11,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .side-panel-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-        /* Ocultar flechas de input number */
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        /* Animación para el icono de carga */
+        .spin-anim { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex text-slate-800">
@@ -76,6 +78,7 @@
                 <h3 class="text-5xl font-black text-slate-900 z-10">0</h3>
                 <p class="text-[11px] font-bold text-slate-400 z-10">Por confirmar o asignar</p>
             </div>
+            
             <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100 flex flex-col justify-between h-48 relative overflow-hidden">
                 <div class="flex justify-between items-start z-10">
                     <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">En Ruta</p>
@@ -84,13 +87,16 @@
                 <h3 class="text-5xl font-black text-slate-900 z-10">0</h3>
                 <p class="text-[11px] font-bold text-slate-400 z-10">Entregas en camino</p>
             </div>
+
             <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100 flex flex-col justify-between h-48 relative overflow-hidden">
                 <div class="flex justify-between items-start z-10">
                     <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Crédito Disponible</p>
-                    <div class="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500"><i class="fas fa-wallet text-lg"></i></div>
+                    <button onclick="sincronizar()" id="btnSync" class="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-100 transition-colors">
+                        <i id="syncIcon" class="fas fa-sync-alt text-lg"></i>
+                    </button>
                 </div>
                 <h3 id="creditoHeader" class="text-3xl font-black text-emerald-600 z-10">$0.00</h3>
-                <p class="text-[11px] font-bold text-slate-400 z-10">Límite actual</p>
+                <p class="text-[11px] font-bold text-slate-400 z-10">Límite actualizado</p>
             </div>
         </div>
 
@@ -177,33 +183,48 @@
             document.getElementById('userInitials').innerText = userData.nombre.substring(0, 2);
 
             cargarEstaciones();
+
+            // ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
+            setInterval(sincronizar, 30000);
         }
 
-       async function cargarEstaciones() {
-    try {
-        const response = await fetch('/api/estaciones');
-        estacionesData = await response.json();
-        
-        const select = document.getElementById('selEstacion');
-        select.innerHTML = '<option value="">Seleccione Estación</option>';
-        
-        estacionesData.forEach(est => {
-            const option = document.createElement('option');
-            // Intentar leer ID_Estacion o id / Nombre o nombre
-            option.value = est.ID_Estacion || est.id; 
-            option.textContent = est.Nombre || est.nombre;
-            select.appendChild(option);
-        });
-    } catch (e) {
-        console.error("Error cargando estaciones", e);
-    }
-}
+        async function sincronizar() {
+            const icon = document.getElementById('syncIcon');
+            icon.classList.add('spin-anim'); // Empezar a girar
+            await cargarEstaciones();
+            loadConfig(); // Actualizar la vista con los nuevos datos
+            setTimeout(() => icon.classList.remove('spin-anim'), 1000); // Parar de girar
+        }
+
+        async function cargarEstaciones() {
+            try {
+                const response = await fetch('/api/estaciones');
+                estacionesData = await response.json();
+                
+                const select = document.getElementById('selEstacion');
+                const valorActual = select.value; // Guardar lo que estaba seleccionado
+
+                select.innerHTML = '<option value="">Seleccione Estación</option>';
+                
+                estacionesData.forEach(est => {
+                    const option = document.createElement('option');
+                    option.value = est.ID_Estacion || est.id; 
+                    option.textContent = est.Nombre || est.nombre;
+                    select.appendChild(option);
+                });
+
+                if (valorActual) select.value = valorActual; // Mantener selección
+            } catch (e) {
+                console.error("Error cargando estaciones", e);
+            }
+        }
 
         function loadConfig() {
             const id = document.getElementById('selEstacion').value;
-            const est = estacionesData.find(e => e.id === id);
+            const est = estacionesData.find(e => (e.id || e.ID_Estacion) === id);
             if (est) {
                 document.getElementById('dirAuto').value = est.direccion;
+                // Formatear crédito para el encabezado
                 document.getElementById('creditoHeader').innerText = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(est.credito);
                 calcTotal();
             }
@@ -213,7 +234,7 @@
             const id = document.getElementById('selEstacion').value;
             const type = document.getElementById('fuelType').value;
             const qty = parseFloat(document.getElementById('fuelQty').value) || 0;
-            const est = estacionesData.find(e => e.id === id);
+            const est = estacionesData.find(e => (e.id || e.ID_Estacion) === id);
 
             if (est) {
                 const precio = est.precios[type];
@@ -238,15 +259,13 @@
         document.getElementById('orderForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnConfirm');
-            
-            // Bloquear botón para evitar doble envío
             btn.disabled = true;
             btn.innerText = "Procesando...";
 
             try {
                 const userData = JSON.parse(localStorage.getItem('usuario'));
                 const idEstacion = document.getElementById('selEstacion').value;
-                const est = estacionesData.find(e => e.id === idEstacion);
+                const est = estacionesData.find(e => (e.id || e.ID_Estacion) === idEstacion);
 
                 const pedido = {
                     estacion: est.nombre,
@@ -267,12 +286,13 @@
                 const resData = await response.json();
                 
                 if (resData.success) {
-                    alert('¡Pedido registrado con éxito en MOBIL Sheets!');
+                    alert('¡Pedido registrado con éxito!');
                     document.getElementById('orderForm').reset();
                     document.getElementById('finalTotal').innerText = "$0.00";
                     togglePanel();
+                    sincronizar(); // Actualizar crédito tras pedido
                 } else {
-                    alert('Error al guardar: ' + (resData.message || 'Error desconocido'));
+                    alert('Error al guardar pedido.');
                 }
             } catch (error) {
                 console.error("Error:", error);
