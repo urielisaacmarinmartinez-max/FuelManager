@@ -17,7 +17,7 @@ const serviceAccountAuth = new JWT({
 });
 
 // REEMPLAZA CON TU ID REAL
-const doc = new GoogleSpreadsheet('TU_ID_DE_LA_HOJA', serviceAccountAuth);
+const doc = new GoogleSpreadsheet('1GALSgq5RhFv103c307XYeNoorQ5gAzxFR1Q64XMGr7Q', serviceAccountAuth);
 
 // 1. LOGIN (Pestaña "Usuarios")
 app.post('/api/login', async (req, res) => {
