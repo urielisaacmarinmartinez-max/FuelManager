@@ -85,4 +85,30 @@ app.get('/api/estaciones', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// RUTA PARA GUARDAR UN NUEVO PEDIDO
+app.post('/api/pedidos', async (req, res) => {
+    const pedido = req.body;
+    try {
+        await doc.loadInfo();
+        const sheet = doc.sheetsByTitle['Pedidos']; // Asegúrate de tener esta pestaña en tu Excel
+        
+        // Añadir la fila con los datos que vienen desde la web
+        await sheet.addRow({
+            fecha_registro: new Date().toLocaleString(),
+            estacion: pedido.estacion,
+            combustible: pedido.combustible,
+            litros: pedido.litros,
+            total: pedido.total,
+            fecha_entrega: pedido.fecha_entrega,
+            prioridad: pedido.prioridad,
+            estatus: 'Pendiente',
+            usuario: pedido.usuario
+        });
+
+        res.json({ success: true, message: 'Pedido guardado con éxito' });
+    } catch (error) {
+        console.error("Error al guardar pedido:", error);
+        res.status(500).json({ success: false, message: 'No se pudo guardar el pedido' });
+    }
+});
 app.listen(PORT, () => console.log(`Servidor activo en puerto ${PORT}`));
