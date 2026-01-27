@@ -412,12 +412,17 @@
         window.location.href = '/login.html';
     }
 function irMisEstaciones() {
-    // 1. Ocultar Dashboard, mostrar vista de estaciones
-    document.getElementById('dashboardView').classList.add('hidden');
-    document.getElementById('estacionesView').classList.remove('hidden');
+    console.log("Cambiando a vista Estaciones...");
+    const dash = document.getElementById('dashboardView');
+    const estView = document.getElementById('estacionesView');
     
-    // 2. Ejecutar el dibujo de las tarjetas
-    dibujarEstaciones();
+    if(dash && estView) {
+        dash.classList.add('hidden');
+        estView.classList.remove('hidden');
+        dibujarEstaciones(); // Esta función genera las tarjetas
+    } else {
+        console.error("No se encontraron los contenedores de vista");
+    }
 }
 
 function irDashboard() {
@@ -429,50 +434,48 @@ function dibujarEstaciones() {
     const container = document.getElementById('estacionesCardsContainer');
     const userData = JSON.parse(localStorage.getItem('usuario'));
     
-    // Filtramos para que solo vea las estaciones que tiene permitidas
+    // Obtener IDs permitidos del usuario
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
+    
+    // Filtrar datos
     const filtradas = estacionesData.filter(est => {
-        const idActual = (est.id || est.ID_Estacion || est.ID_ESTACION);
-        return misEstacionesIds.includes(idActual);
+        const id = (est.id || est.ID_Estacion || est.ID_ESTACION);
+        return misEstacionesIds.includes(id);
     });
 
-    container.innerHTML = filtradas.map(est => {
-        // Mapeo exacto de tus columnas de Excel (TIRILLAS)
-        const capExtra = est.CAP_EXTRA || 0;
-        const capSupreme = est.CAP_SUPREME || 0;
-        const capDiesel = est.CAP_DIESEL || 0;
-        
-        const volExtra = est.VOL_EXTRA || 0;
-        const volSupreme = est.VOL_SUPREME || 0;
-        const volDiesel = est.VOL_DIESEL || 0;
+    if (filtradas.length === 0) {
+        container.innerHTML = '<p class="p-8 text-slate-400 italic">No tienes estaciones asignadas o no se han cargado datos.</p>';
+        return;
+    }
 
-        return `
-            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-black text-slate-800">${est.ESTACION || est.nombre}</h2>
-                    <p class="text-emerald-600 font-bold text-xl">Crédito: ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(est.credito || 0)}</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    ${renderFuelCard('EXTRA', 'emerald', capExtra, volExtra)}
-                    ${renderFuelCard('SUPREME', 'red', capSupreme, volSupreme)}
-                    ${capDiesel > 0 || volDiesel > 0 ? renderFuelCard('DIESEL', 'slate', capDiesel, volDiesel) : `
-                        <div class="bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center p-8">
-                            <span class="text-slate-300 font-bold uppercase text-[10px] tracking-widest">Sin Diesel</span>
-                        </div>
-                    `}
-                </div>
-            </div>`;
-    }).join('');
+    container.innerHTML = filtradas.map(est => `
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black text-slate-800">${est.ESTACION || est.nombre || 'Sin Nombre'}</h2>
+                <span class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-bold text-sm">
+                    ID: ${est.ID_ESTACION || est.id}
+                </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                ${renderFuelCard('EXTRA', 'emerald', est.CAP_EXTRA || 0, est.VOL_EXTRA || 0)}
+                ${renderFuelCard('SUPREME', 'red', est.CAP_SUPREME || 0, est.VOL_SUPREME || 0)}
+                ${renderFuelCard('DIESEL', 'slate', est.CAP_DIESEL || 0, est.VOL_DIESEL || 0)}
+            </div>
+        </div>
+    `).join('');
 }
 
 function renderFuelCard(label, color, cap, vol) {
+    // Si la capacidad es 0, no mostramos la tarjeta o la mostramos vacía
+    if (cap === 0 && vol === 0) return `<div class="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-300 uppercase italic">Sin ${label}</div>`;
+
     return `
         <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
             <p class="text-${color}-600 font-black text-center text-xs mb-4 uppercase tracking-widest border-b border-${color}-100 pb-2">${label}</p>
             <div class="grid grid-cols-2 gap-2 mb-4 text-center">
                 <div>
                     <p class="text-[8px] font-black text-slate-400 uppercase">Capacidad</p>
-                    <p class="text-xs font-bold text-slate-700">${cap.toLocaleString()} L</p>
+                    <p class="text-xs font-bold text-slate-700">${Number(cap).toLocaleString()} L</p>
                 </div>
                 <div>
                     <p class="text-[8px] font-black text-slate-400 uppercase">Vta Prom.</p>
@@ -481,7 +484,7 @@ function renderFuelCard(label, color, cap, vol) {
             </div>
             <div class="bg-white p-4 rounded-xl text-center shadow-sm">
                 <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Volumen Actual</p>
-                <p class="text-2xl font-black text-slate-900">${vol.toLocaleString()} L</p>
+                <p class="text-2xl font-black text-slate-900">${Number(vol).toLocaleString()} L</p>
             </div>
         </div>`;
 }
