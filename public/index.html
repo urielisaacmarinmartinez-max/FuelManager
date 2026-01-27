@@ -179,24 +179,25 @@
             cargarEstaciones();
         }
 
-        async function cargarEstaciones() {
-            try {
-                const response = await fetch('/api/estaciones');
-                estacionesData = await response.json();
-                
-                const select = document.getElementById('selEstacion');
-                select.innerHTML = '<option value="">Seleccione Estación</option>';
-                
-                estacionesData.forEach(est => {
-                    const option = document.createElement('option');
-                    option.value = est.id;
-                    option.textContent = est.nombre;
-                    select.appendChild(option);
-                });
-            } catch (e) {
-                console.error("Error cargando estaciones", e);
-            }
-        }
+       async function cargarEstaciones() {
+    try {
+        const response = await fetch('/api/estaciones');
+        estacionesData = await response.json();
+        
+        const select = document.getElementById('selEstacion');
+        select.innerHTML = '<option value="">Seleccione Estación</option>';
+        
+        estacionesData.forEach(est => {
+            const option = document.createElement('option');
+            // Intentar leer ID_Estacion o id / Nombre o nombre
+            option.value = est.ID_Estacion || est.id; 
+            option.textContent = est.Nombre || est.nombre;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error("Error cargando estaciones", e);
+    }
+}
 
         function loadConfig() {
             const id = document.getElementById('selEstacion').value;
