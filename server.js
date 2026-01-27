@@ -56,25 +56,26 @@ app.post('/api/login', async (req, res) => {
 // 2. CARGAR ESTACIONES (Pestaña "Estaciones")
 app.get('/api/estaciones', async (req, res) => {
     try {
-        await doc.loadInfo();
-        const sheet = doc.sheetsByTitle['Estaciones']; 
+        const sheet = doc.sheetsByTitle['Estaciones']; // Asegúrate que se llame exactamente así
         const rows = await sheet.getRows();
         
         const estaciones = rows.map(row => ({
-            id: row.get('ID_Estacion'),
-            nombre: row.get('Nombre'),
-            direccion: row.get('Dirección'),
+            // Usamos || para que busque de ambas formas
+            id: row.get('ID_Estacion') || row.get('id_estacion') || row.get('ID'),
+            nombre: row.get('Nombre') || row.get('nombre'),
+            direccion: row.get('Dirección') || row.get('direccion'),
+            credito: parseFloat(row.get('Crédito Disponible') || row.get('credito')) || 0,
             precios: {
-                "Extra": parseFloat(row.get('Precio Extra')) || 0,
-                "Supreme": parseFloat(row.get('Precio Supreme')) || 0,
-                "Diesel": parseFloat(row.get('Precio Diesel')) || 0
-            },
-            credito: parseFloat(row.get('Crédito Disponible')) || 0
+                Extra: parseFloat(row.get('Precio Extra') || row.get('extra')) || 0,
+                Supreme: parseFloat(row.get('Precio Supreme') || row.get('supreme')) || 0,
+                Diesel: parseFloat(row.get('Precio Diesel') || row.get('diesel')) || 0
+            }
         }));
+        
         res.json(estaciones);
     } catch (error) {
-        console.error("Error estaciones:", error);
-        res.status(500).json({ success: false });
+        console.error("Error cargando estaciones:", error);
+        res.status(500).json({ error: "No se pudieron cargar las estaciones" });
     }
 });
 
