@@ -257,7 +257,9 @@
     // NUEVA FUNCIÓN: Dibuja los pedidos y actualiza contadores
     async function cargarPedidosDashboard() {
         try {
-            const response = await fetch('/api/obtener-pedidos');
+            const userData = JSON.parse(localStorage.getItem('usuario'));
+const estacionesParam = encodeURIComponent(userData.estaciones);
+const response = await fetch(`/api/obtener-pedidos?estaciones=${estacionesParam}`);
             const data = await response.json();
             
             // 1. Actualizar Contadores Superiores
@@ -317,17 +319,18 @@
 
         // Actualizar el selector si existe
         const select = document.getElementById('selEstacion');
-        if (select) {
+        if (select && userData) {
+            const misIds = userData.estaciones.split(',').map(s => s.trim());
             select.innerHTML = '<option value="">Seleccione Estación</option>';
-            estacionesData.forEach(est => {
+            
+            // Filtramos para que solo aparezcan las que el usuario tiene permitido
+            estacionesData.filter(est => misIds.includes(est.id)).forEach(est => {
                 const option = document.createElement('option');
-                // IMPORTANTE: Verifica que ID_Estacion sea el nombre exacto en tu Excel
-                option.value = est.ID_Estacion || est.ID_ESTACION; 
-                option.textContent = est.ESTACION || est.Nombre;
+                option.value = est.id; // Usamos .id que es como viene de Render
+                option.textContent = est.nombre; // Usamos .nombre
                 select.appendChild(option);
             });
         }
-
         // Ejecutamos el dibujo de tarjetas
         dibujarEstaciones();
 
