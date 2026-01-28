@@ -486,26 +486,27 @@ function dibujarEstaciones() {
     const container = document.getElementById('estacionesCardsContainer');
     const userData = JSON.parse(localStorage.getItem('usuario'));
     
-    // Obtenemos los IDs de las estaciones asignadas al usuario (ej: "EST_001")
+    // Filtramos las estaciones permitidas para el usuario (ej: EST_001)
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
 
-    // Filtrar los datos que vienen del Excel (estacionesData)
+    // Filtrar los datos cargados desde el Excel
     const filtradas = estacionesData.filter(est => {
-        // Buscamos coincidencia con ID_ESTACION o id
-        const idActual = est.ID_ESTACION || est.id || "";
+        // Buscamos el ID en la columna ESTACION o un campo ID si lo tienes
+        // Si tu Excel no tiene columna ID, usaremos el nombre de la ESTACION como ID
+        const idActual = est.ID_ESTACION || est.ESTACION || "";
         return misEstacionesIds.includes(idActual);
     });
 
     if (filtradas.length === 0) {
-        container.innerHTML = '<p class="p-8 text-slate-400 italic text-center">No se encontraron datos para tus estaciones asignadas.</p>';
+        container.innerHTML = '<div class="p-20 text-center text-slate-400">No se encontraron datos para tus estaciones.</div>';
         return;
     }
 
     container.innerHTML = filtradas.map(est => {
-        // Extraer valores con nombres exactos de tu Excel (image_054eb9.png)
-        const nombre = est.ESTACION || "Estación sin nombre";
-        const id = est.ID_ESTACION || "N/A";
-        const ultimaAct = est.ULTIMA_ACTUALIZACION || "SIN REGISTRO";
+        // Mapeo exacto según tu imagen de Excel
+        const nombre = est.ESTACION || "Desconocida";
+        const id = est.ID_ESTACION || est.ESTACION;
+        const fecha = est.ULTIMA_ACTUALIZACION || "SIN FECHA";
 
         return `
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
@@ -513,11 +514,11 @@ function dibujarEstaciones() {
                 <div>
                     <h2 class="text-2xl font-black text-slate-800">${nombre}</h2>
                     <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">
-                        Última Actualización: ${ultimaAct}
+                        ÚLTIMA ACTUALIZACIÓN: ${fecha}
                     </p>
                 </div>
                 <button onclick="abrirModalTirilla('${id}', '${nombre}')" 
-                        class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all shadow-lg shadow-slate-200">
+                        class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all shadow-lg">
                     Actualizar Tirilla
                 </button>
             </div>
@@ -556,6 +557,48 @@ function renderFuelCard(label, color, cap, vol, vta) {
             </div>
         </div>`;
 }
+// --- LÓGICA DEL FORMULARIO DE ACTUALIZACIÓN ---
+document.getElementById('tirillaForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('modalEstacionId').value;
+    const btn = e.target.querySelector('button[type="submit"]');
+    
+    // Recolectamos los datos de los inputs del modal
+    const datos = {
+        id_estacion: id,
+        vol_extra: document.getElementById('volExtra').value,
+        vol_supreme: document.getElementById('volSupreme').value,
+        vol_diesel: document.getElementById('volDiesel').value
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+    try {
+        // REEMPLAZA ESTO con tu URL de la aplicación web (la que termina en /exec)
+        const URL_APPS_SCRIPT = 'TU_URL_DE_APPS_SCRIPT_AQUI'; 
+
+        await fetch(URL_APPS_SCRIPT, {
+            method: 'POST',
+            mode: 'no-cors', // Importante para Google Apps Script
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+
+        alert('¡Inventario actualizado con éxito!');
+        cerrarModalTirilla();
+        
+        // Refrescamos los datos para ver el cambio (si tienes la función sincronizar)
+        if (typeof sincronizar === 'function') sincronizar(); 
+        
+    } catch (error) {
+        console.error("Error al guardar:", error);
+        alert('Error de conexión con el servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Guardar Tirilla";
+    }
+};
     window.onload = initDashboard;
 </script>
 </body>
