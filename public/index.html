@@ -486,30 +486,28 @@ function dibujarEstaciones() {
     const container = document.getElementById('estacionesCardsContainer');
     const userData = JSON.parse(localStorage.getItem('usuario'));
     
-    // Obtenemos los nombres de las estaciones asignadas
-    // Si tu usuario tiene "EST_001", necesitamos saber que es "ALDIA DORADA"
+    // IDs del usuario: ["EST_001", "EST_002"]
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
 
-    // Filtrar estacionesData (que viene de la hoja TIRILLAS)
-    // Usamos una búsqueda flexible para encontrar la estación
+    // Filtrar TIRILLAS comparando con la hoja de Estaciones Base
     const filtradas = estacionesData.filter(est => {
         const nombreExcel = est.ESTACION;
-        // Si el usuario tiene EST_001, lo buscamos en la otra tabla para saber su nombre
+        // Buscamos si el nombre en TIRILLAS coincide con el ID que tiene permitido el usuario
         return misEstacionesIds.some(id => {
-            const infoBase = estacionesBase.find(b => b.ID_Estacion === id);
-            return infoBase && infoBase.Nombre === nombreExcel;
+            const base = estacionesBase.find(b => b.ID_Estacion === id);
+            return base && base.Nombre === nombreExcel;
         });
     });
 
     if (filtradas.length === 0) {
-        container.innerHTML = `<div class="p-20 text-center text-slate-400">No hay estaciones vinculadas para los IDs: ${misEstacionesIds.join(', ')}</div>`;
+        container.innerHTML = `<div class="p-20 text-center text-slate-400">No se encontraron datos. Verifica que los nombres en la hoja TIRILLAS coincidan con la hoja Estaciones.</div>`;
         return;
     }
 
     container.innerHTML = filtradas.map(est => {
-        // Buscamos el crédito en la hoja "Estaciones" usando el nombre
-        const infoExtra = estacionesBase.find(b => b.Nombre === est.ESTACION);
-        const credito = infoExtra ? Number(infoExtra.Crédito_Disponible).toLocaleString('es-MX', {style: 'currency', currency: 'MXN'}) : '$0.00';
+        // Buscar crédito en la hoja Estaciones (Columna G en tu imagen)
+        const infoBase = estacionesBase.find(b => b.Nombre === est.ESTACION);
+        const credito = infoBase ? Number(infoBase['Crédito Disponible'] || 0).toLocaleString('es-MX', {style:'currency', currency:'MXN'}) : '$0.00';
 
         return `
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
@@ -521,21 +519,19 @@ function dibujarEstaciones() {
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[8px] font-black text-slate-400 uppercase">Crédito Disp.</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Crédito Disp.</p>
                     <p class="text-xl font-black text-emerald-600">${credito}</p>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 ${renderFuelCard('EXTRA', 'emerald', est.CAP_EXTRA, est.VOL_EXTRA, est.VTA_EXTRA)}
                 ${renderFuelCard('SUPREME', 'red', est.CAP_SUPREME, est.VOL_SUPREME, est.VTA_SUPREME)}
                 ${Number(est.CAP_DIESEL) > 0 ? renderFuelCard('DIESEL', 'slate', est.CAP_DIESEL, est.VOL_DIESEL, est.VTA_DIESEL) : 
                 `<div class="bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center p-8 text-[8px] font-bold text-slate-300 uppercase tracking-widest">Sin Diesel</div>`}
             </div>
-
             <button onclick="abrirModalTirilla('${est.ESTACION}', '${est.ESTACION}')" 
-                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
-                Actualizar Volumen en Tanques
+                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">
+                Actualizar Inventario
             </button>
         </div>`;
     }).join('');
@@ -566,39 +562,43 @@ function renderFuelCard(label, color, cap, vol, vta) {
             </div>
         </div>`;
 }
-// --- LÓGICA DEL FORMULARIO DE ACTUALIZACIÓN ---
+// --- LÓGICA DEL FORMULARIO DE ACTUALIZACIÓN (TU CÓDIGO CON MEJORAS) ---
 document.getElementById('tirillaForm').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('modalEstacionId').value;
     const btn = e.target.querySelector('button[type="submit"]');
     
-    // Recolectamos los datos de los inputs del modal
     const datos = {
-        id_estacion: id,
+        id_estacion: id, // Aquí viaja el nombre "ALDIA DORADA"
         vol_extra: document.getElementById('volExtra').value,
         vol_supreme: document.getElementById('volSupreme').value,
-        vol_diesel: document.getElementById('volDiesel').value
+        vol_diesel: document.getElementById('volDiesel').value,
+        fecha_hora: new Date().toLocaleString('es-MX')
     };
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
     try {
-        // REEMPLAZA ESTO con tu URL de la aplicación web (la que termina en /exec)
-        const URL_APPS_SCRIPT = 'TU_URL_DE_APPS_SCRIPT_AQUI'; 
+        // REEMPLAZA ESTO con tu URL de la aplicación web de Google Apps Script
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbyFAnF_-lTI7rL-K1DwRlqia9C2d1bGvEc9Xz1-KgompKw_h0_KVeki6vnQdjXPJcDe/exec'; 
 
         await fetch(URL_APPS_SCRIPT, {
             method: 'POST',
-            mode: 'no-cors', // Importante para Google Apps Script
+            mode: 'no-cors', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datos)
         });
 
-        alert('¡Inventario actualizado con éxito!');
+        alert('¡Inventario actualizado con éxito! La hoja de cálculo se ha actualizado.');
         cerrarModalTirilla();
         
-        // Refrescamos los datos para ver el cambio (si tienes la función sincronizar)
-        if (typeof sincronizar === 'function') sincronizar(); 
+        // Sincronizamos para que la plataforma lea los nuevos datos del Excel
+        if (typeof sincronizar === 'function') {
+            await sincronizar(); 
+        } else {
+            location.reload();
+        }
         
     } catch (error) {
         console.error("Error al guardar:", error);
