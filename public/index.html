@@ -486,48 +486,57 @@ function dibujarEstaciones() {
     const container = document.getElementById('estacionesCardsContainer');
     const userData = JSON.parse(localStorage.getItem('usuario'));
     
-    // Filtramos las estaciones permitidas para el usuario (ej: EST_001)
+    // Obtenemos los nombres de las estaciones asignadas
+    // Si tu usuario tiene "EST_001", necesitamos saber que es "ALDIA DORADA"
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
 
-    // Filtrar los datos cargados desde el Excel
+    // Filtrar estacionesData (que viene de la hoja TIRILLAS)
+    // Usamos una búsqueda flexible para encontrar la estación
     const filtradas = estacionesData.filter(est => {
-        // Buscamos el ID en la columna ESTACION o un campo ID si lo tienes
-        // Si tu Excel no tiene columna ID, usaremos el nombre de la ESTACION como ID
-        const idActual = est.ID_ESTACION || est.ESTACION || "";
-        return misEstacionesIds.includes(idActual);
+        const nombreExcel = est.ESTACION;
+        // Si el usuario tiene EST_001, lo buscamos en la otra tabla para saber su nombre
+        return misEstacionesIds.some(id => {
+            const infoBase = estacionesBase.find(b => b.ID_Estacion === id);
+            return infoBase && infoBase.Nombre === nombreExcel;
+        });
     });
 
     if (filtradas.length === 0) {
-        container.innerHTML = '<div class="p-20 text-center text-slate-400">No se encontraron datos para tus estaciones.</div>';
+        container.innerHTML = `<div class="p-20 text-center text-slate-400">No hay estaciones vinculadas para los IDs: ${misEstacionesIds.join(', ')}</div>`;
         return;
     }
 
     container.innerHTML = filtradas.map(est => {
-        // Mapeo exacto según tu imagen de Excel
-        const nombre = est.ESTACION || "Desconocida";
-        const id = est.ID_ESTACION || est.ESTACION;
-        const fecha = est.ULTIMA_ACTUALIZACION || "SIN FECHA";
+        // Buscamos el crédito en la hoja "Estaciones" usando el nombre
+        const infoExtra = estacionesBase.find(b => b.Nombre === est.ESTACION);
+        const credito = infoExtra ? Number(infoExtra.Crédito_Disponible).toLocaleString('es-MX', {style: 'currency', currency: 'MXN'}) : '$0.00';
 
         return `
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
             <div class="flex justify-between items-start mb-8">
                 <div>
-                    <h2 class="text-2xl font-black text-slate-800">${nombre}</h2>
+                    <h2 class="text-2xl font-black text-slate-800">${est.ESTACION}</h2>
                     <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">
-                        ÚLTIMA ACTUALIZACIÓN: ${fecha}
+                        Última Actualización: ${est.ULTIMA_ACTUALIZACION || 'SIN REGISTRO'}
                     </p>
                 </div>
-                <button onclick="abrirModalTirilla('${id}', '${nombre}')" 
-                        class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all shadow-lg">
-                    Actualizar Tirilla
-                </button>
+                <div class="text-right">
+                    <p class="text-[8px] font-black text-slate-400 uppercase">Crédito Disp.</p>
+                    <p class="text-xl font-black text-emerald-600">${credito}</p>
+                </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 ${renderFuelCard('EXTRA', 'emerald', est.CAP_EXTRA, est.VOL_EXTRA, est.VTA_EXTRA)}
                 ${renderFuelCard('SUPREME', 'red', est.CAP_SUPREME, est.VOL_SUPREME, est.VTA_SUPREME)}
                 ${Number(est.CAP_DIESEL) > 0 ? renderFuelCard('DIESEL', 'slate', est.CAP_DIESEL, est.VOL_DIESEL, est.VTA_DIESEL) : 
-                `<div class="bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center p-8 text-[10px] font-bold text-slate-300 uppercase">Sin Diesel</div>`}
+                `<div class="bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center p-8 text-[8px] font-bold text-slate-300 uppercase tracking-widest">Sin Diesel</div>`}
             </div>
+
+            <button onclick="abrirModalTirilla('${est.ESTACION}', '${est.ESTACION}')" 
+                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
+                Actualizar Volumen en Tanques
+            </button>
         </div>`;
     }).join('');
 }
