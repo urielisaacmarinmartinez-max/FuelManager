@@ -307,31 +307,34 @@ const response = await fetch(`/api/obtener-pedidos?estaciones=${estacionesParam}
         
         console.log("Datos procesados:", res);
 
-        // Como vimos en tu consola, 'res' ya es el array de datos
+        // REPARACIÓN CLAVE: Definir userData localmente para evitar el ReferenceError
+        const userData = JSON.parse(localStorage.getItem('usuario'));
+
         if (Array.isArray(res)) {
             estacionesData = res;
-            // Usamos los mismos datos para la base en este caso
             estacionesBase = res; 
         } else if (res && res.datos) {
             estacionesData = res.datos.TIRILLAS || []; 
             estacionesBase = res.datos.Estaciones || []; 
         }
 
-        // Actualizar el selector si existe
         const select = document.getElementById('selEstacion');
-        if (select && userData) {
+        
+        // Ahora userData ya existe aquí y el if pasará sin errores
+        if (select && userData && userData.estaciones) {
             const misIds = userData.estaciones.split(',').map(s => s.trim());
             select.innerHTML = '<option value="">Seleccione Estación</option>';
             
-            // Filtramos para que solo aparezcan las que el usuario tiene permitido
+            // Filtramos las estaciones según los permisos del usuario
             estacionesData.filter(est => misIds.includes(est.id)).forEach(est => {
                 const option = document.createElement('option');
-                option.value = est.id; // Usamos .id que es como viene de Render
-                option.textContent = est.nombre; // Usamos .nombre
+                option.value = est.id; 
+                option.textContent = est.nombre;
                 select.appendChild(option);
             });
         }
-        // Ejecutamos el dibujo de tarjetas
+        
+        // Dibujamos las tarjetas (que ya traen sus litros y capacidades correctas)
         dibujarEstaciones();
 
     } catch (e) {
