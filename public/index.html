@@ -506,40 +506,46 @@ function dibujarEstaciones() {
     
     if (!userData || !userData.estaciones) return;
 
-    // Limpiamos los IDs del usuario: "EST_001, EST_002" -> ["EST_001", "EST_002"]
+    // IDs del usuario: ["EST_001", "EST_002"]
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
 
-    // Filtrado con el nombre de columna exacto de tu captura de pantalla
+    // FILTRADO CLAVE: Usamos 'est.id' porque así viene del servidor de Render
     const filtradas = estacionesData.filter(est => {
-        const idActual = est.ID_Estacion || est.ID_ESTACION;
-        return misEstacionesIds.includes(idActual);
+        return misEstacionesIds.includes(est.id);
     });
 
     if (filtradas.length === 0) {
         container.innerHTML = `
             <div class="p-20 text-center">
                 <p class="text-slate-400 font-bold">No se encontraron datos para: ${misEstacionesIds.join(', ')}</p>
-                <p class="text-[10px] text-slate-300 mt-2">Verifica que el ID en el Excel sea exactamente igual.</p>
+                <p class="text-[10px] text-slate-300 mt-2">Dato en servidor usa propiedad 'id'</p>
             </div>`;
         return;
     }
 
     container.innerHTML = filtradas.map(est => {
-        // Obtenemos valores o ponemos 0 si vienen vacíos
-        const vtaExtra = est.VTA_EXTRA || 0;
-        const volExtra = est.VOL_EXTRA || 0;
-        const capExtra = est.CAP_EXTRA || 1; // Evitar división por cero
-
+        // En tu consola vemos que el nombre viene en 'est.nombre'
+        // NOTA: Como el servidor solo envía id/nombre/direccion, 
+        // los valores de inventario (vol_extra, etc) podrían no estar llegando aún.
+        
         return `
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
             <div class="flex justify-between items-start mb-6">
                 <div>
-                    <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full mb-2 inline-block">${est.ID_Estacion}</span>
-                    <h2 class="text-2xl font-black text-slate-800">${est.ESTACION || 'Sin Nombre'}</h2>
+                    <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full mb-2 inline-block">${est.id}</span>
+                    <h2 class="text-2xl font-black text-slate-800">${est.nombre || 'Estación'}</h2>
+                    <p class="text-[10px] text-slate-400">${est.direccion || ''}</p>
                 </div>
             </div>
-            <button onclick="abrirModalTirilla('${est.ID_Estacion}', '${est.ESTACION}')" 
-                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase hover:bg-blue-600 transition-all">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                ${renderFuelCard('EXTRA', 'emerald', 0, 0, 0)}
+                ${renderFuelCard('SUPREME', 'red', 0, 0, 0)}
+                ${renderFuelCard('DIESEL', 'slate', 0, 0, 0)}
+            </div>
+
+            <button onclick="abrirModalTirilla('${est.id}', '${est.nombre}')" 
+                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase hover:bg-blue-600 transition-all shadow-xl">
                 Actualizar Inventario
             </button>
         </div>`;
