@@ -657,6 +657,101 @@ document.getElementById('tirillaForm').onsubmit = async (e) => {
         btn.innerText = "Guardar Tirilla";
     }
 };
+
+function irMisPedidos() {
+    // Ocultar otras vistas
+    document.getElementById('dashboardView').classList.add('hidden');
+    document.getElementById('estacionesView').classList.add('hidden');
+    // Mostrar pedidos
+    document.getElementById('pedidosView').classList.remove('hidden');
+    renderizarPedidosLista();
+}
+
+async function renderizarPedidosLista(filtro = 'Todos') {
+    const container = document.getElementById('listaPedidosCompleta');
+    const userData = JSON.parse(localStorage.getItem('usuario'));
+    
+    // 1. Obtener pedidos (reutilizamos tu API que ya filtra por estaciones)
+    const estacionesParam = encodeURIComponent(userData.estaciones);
+    const response = await fetch(`/api/obtener-pedidos?estaciones=${estacionesParam}`);
+    const data = await response.json();
+    
+    let pedidos = data.pedidos;
+    if (filtro !== 'Todos') {
+        pedidos = pedidos.filter(p => p.estatus === filtro);
+    }
+
+    if (pedidos.length === 0) {
+        container.innerHTML = `<div class="p-20 text-center text-slate-400">No hay pedidos con estatus: ${filtro}</div>`;
+        return;
+    }
+
+    container.innerHTML = pedidos.map(p => {
+        // Lógica de colores según estado
+        const config = {
+            'Pendiente': { bg: 'bg-orange-50', text: 'text-orange-600', icon: 'fa-clock' },
+            'Aceptado':  { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'fa-check-double' },
+            'En Ruta':   { bg: 'bg-purple-50', text: 'text-purple-600', icon: 'fa-truck-fast' },
+            'Entregado': { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'fa-house-circle-check' },
+            'Cancelado': { bg: 'bg-red-50', text: 'text-red-600', icon: 'fa-ban' }
+        }[p.estatus] || { bg: 'bg-slate-50', text: 'text-slate-600', icon: 'fa-box' };
+
+        return `
+        <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 ${config.bg} ${config.text} rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fas ${config.icon}"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-black uppercase tracking-widest ${config.text}">${p.estatus}</span>
+                            <span class="text-[10px] text-slate-300">|</span>
+                            <span class="text-[10px] font-bold text-slate-400">REF: ${p.id || 'N/A'}</span>
+                        </div>
+                        <h3 class="font-black text-slate-900">${p.estacion}</h3>
+                    </div>
+                </div>
+
+                <div class="flex gap-8">
+                    <div class="text-center">
+                        <p class="text-[8px] font-black text-slate-400 uppercase">Solicitado</p>
+                        <p class="text-sm font-bold text-slate-700">${p.litros} L</p>
+                    </div>
+                    <div class="text-center ${p.litros_reales ? '' : 'opacity-20'}">
+                        <p class="text-[8px] font-black text-slate-400 uppercase">Confirmado</p>
+                        <p class="text-sm font-black text-blue-600">${p.litros_reales || '--'} L</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    ${p.estatus === 'Pendiente' ? `
+                        <button onclick="cancelarPedido('${p.id}')" class="text-red-500 text-xs font-black uppercase hover:underline">Cancelar</button>
+                    ` : ''}
+                    <button class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">Detalles</button>
+                </div>
+            </div>
+
+            ${(p.estatus === 'Aceptado' || p.estatus === 'En Ruta') && p.fletera ? `
+                <div class="mt-4 pt-4 border-t border-dashed border-slate-100 grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-[8px] font-black text-slate-400 uppercase">Transporte</p>
+                        <p class="text-[10px] font-bold text-slate-600"><i class="fas fa-shipper mr-1"></i> ${p.fletera}</p>
+                    </div>
+                    <div>
+                        <p class="text-[8px] font-black text-slate-400 uppercase">Unidad</p>
+                        <p class="text-[10px] font-bold text-slate-600"><i class="fas fa-hashtag mr-1"></i> ${p.unidad}</p>
+                    </div>
+                    <div>
+                        <p class="text-[8px] font-black text-slate-400 uppercase">Chofer</p>
+                        <p class="text-[10px] font-bold text-slate-600"><i class="fas fa-user mr-1"></i> ${p.chofer || 'Asignando...'}</p>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+        `;
+    }).join('');
+}
     window.onload = initDashboard;
 </script>
 </body>
