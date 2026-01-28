@@ -303,35 +303,36 @@
         const response = await fetch('/api/estaciones');
         const res = await response.json();
         
-        console.log("Datos recibidos:", res); // Esto nos dirá en consola qué llega realmente
+        console.log("Datos procesados:", res);
 
-        // Validamos la estructura para evitar el error de "undefined"
-        if (res && res.datos) {
+        // Como vimos en tu consola, 'res' ya es el array de datos
+        if (Array.isArray(res)) {
+            estacionesData = res;
+            // Usamos los mismos datos para la base en este caso
+            estacionesBase = res; 
+        } else if (res && res.datos) {
             estacionesData = res.datos.TIRILLAS || []; 
             estacionesBase = res.datos.Estaciones || []; 
-        } else if (Array.isArray(res)) {
-            // Por si el backend envía el array directamente
-            estacionesData = res;
         }
 
+        // Actualizar el selector si existe
         const select = document.getElementById('selEstacion');
         if (select) {
             select.innerHTML = '<option value="">Seleccione Estación</option>';
-            estacionesBase.forEach(est => {
+            estacionesData.forEach(est => {
                 const option = document.createElement('option');
-                option.value = est.ID_Estacion; 
-                option.textContent = est.Nombre || est.ESTACION;
+                // IMPORTANTE: Verifica que ID_Estacion sea el nombre exacto en tu Excel
+                option.value = est.ID_Estacion || est.ID_ESTACION; 
+                option.textContent = est.ESTACION || est.Nombre;
                 select.appendChild(option);
             });
         }
 
-        // Una vez cargados los datos, dibujamos las tarjetas
+        // Ejecutamos el dibujo de tarjetas
         dibujarEstaciones();
 
     } catch (e) {
-        console.error("Error detallado cargando estaciones:", e);
-        document.getElementById('estacionesCardsContainer').innerHTML = 
-            `<div class="text-center p-10 text-red-500">Error de conexión con el servidor.</div>`;
+        console.error("Error cargando estaciones:", e);
     }
 }
 
@@ -503,50 +504,42 @@ function dibujarEstaciones() {
     const container = document.getElementById('estacionesCardsContainer');
     const userData = JSON.parse(localStorage.getItem('usuario'));
     
-    // IDs permitidos: ["EST_001", "EST_002"]
+    if (!userData || !userData.estaciones) return;
+
+    // Limpiamos los IDs del usuario: "EST_001, EST_002" -> ["EST_001", "EST_002"]
     const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
 
-    // FILTRO DIRECTO: Comparamos ID_Estacion (Col A) con los IDs del usuario
+    // Filtrado con el nombre de columna exacto de tu captura de pantalla
     const filtradas = estacionesData.filter(est => {
-        // est.ID_Estacion es la nueva columna A que añadiste
-        return misEstacionesIds.includes(est.ID_Estacion);
+        const idActual = est.ID_Estacion || est.ID_ESTACION;
+        return misEstacionesIds.includes(idActual);
     });
 
     if (filtradas.length === 0) {
-        container.innerHTML = `<div class="p-20 text-center text-slate-400 font-bold">No tienes estaciones asignadas o los IDs no coinciden.</div>`;
+        container.innerHTML = `
+            <div class="p-20 text-center">
+                <p class="text-slate-400 font-bold">No se encontraron datos para: ${misEstacionesIds.join(', ')}</p>
+                <p class="text-[10px] text-slate-300 mt-2">Verifica que el ID en el Excel sea exactamente igual.</p>
+            </div>`;
         return;
     }
 
     container.innerHTML = filtradas.map(est => {
-        // El crédito sigue viniendo de la hoja Estaciones Base usando el ID
-        const baseInfo = estacionesBase.find(b => b.ID_Estacion === est.ID_Estacion);
-        const credito = baseInfo ? Number(baseInfo['Crédito Disponible'] || 0).toLocaleString('es-MX', {style:'currency', currency:'MXN'}) : '$0.00';
+        // Obtenemos valores o ponemos 0 si vienen vacíos
+        const vtaExtra = est.VTA_EXTRA || 0;
+        const volExtra = est.VOL_EXTRA || 0;
+        const capExtra = est.CAP_EXTRA || 1; // Evitar división por cero
 
         return `
         <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-6">
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full mb-2 inline-block">${est.ID_Estacion}</span>
-                    <h2 class="text-2xl font-black text-slate-800">${est.ESTACION}</h2>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                        ACTUALIZADO: ${est.ULTIMA_ACTUALIZACION || 'SIN REGISTRO'}
-                    </p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[8px] font-black text-slate-400 uppercase">Crédito Disp.</p>
-                    <p class="text-xl font-black text-emerald-600">${credito}</p>
+                    <h2 class="text-2xl font-black text-slate-800">${est.ESTACION || 'Sin Nombre'}</h2>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                ${renderFuelCard('EXTRA', 'emerald', est.CAP_EXTRA, est.VOL_EXTRA, est.VTA_EXTRA)}
-                ${renderFuelCard('SUPREME', 'red', est.CAP_SUPREME, est.VOL_SUPREME, est.VTA_SUPREME)}
-                ${Number(est.CAP_DIESEL) > 0 ? renderFuelCard('DIESEL', 'slate', est.CAP_DIESEL, est.VOL_DIESEL, est.VTA_DIESEL) : 
-                `<div class="bg-slate-50 rounded-3xl border border-dashed border-slate-200 flex items-center justify-center p-8 text-[8px] font-bold text-slate-300 uppercase">Sin Diesel</div>`}
-            </div>
-
             <button onclick="abrirModalTirilla('${est.ID_Estacion}', '${est.ESTACION}')" 
-                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">
+                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase hover:bg-blue-600 transition-all">
                 Actualizar Inventario
             </button>
         </div>`;
