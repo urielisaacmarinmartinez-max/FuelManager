@@ -299,29 +299,39 @@
 
    async function cargarEstaciones() {
     try {
+        console.log("Solicitando datos al servidor...");
         const response = await fetch('/api/estaciones');
         const res = await response.json();
         
-        // Separamos los datos del Excel
-        estacionesData = res.datos.TIRILLAS; // La hoja con VOL_EXTRA
-        estacionesBase = res.datos.Estaciones; // La hoja con Crédito
+        console.log("Datos recibidos:", res); // Esto nos dirá en consola qué llega realmente
+
+        // Validamos la estructura para evitar el error de "undefined"
+        if (res && res.datos) {
+            estacionesData = res.datos.TIRILLAS || []; 
+            estacionesBase = res.datos.Estaciones || []; 
+        } else if (Array.isArray(res)) {
+            // Por si el backend envía el array directamente
+            estacionesData = res;
+        }
 
         const select = document.getElementById('selEstacion');
-        const valorActual = select.value;
+        if (select) {
+            select.innerHTML = '<option value="">Seleccione Estación</option>';
+            estacionesBase.forEach(est => {
+                const option = document.createElement('option');
+                option.value = est.ID_Estacion; 
+                option.textContent = est.Nombre || est.ESTACION;
+                select.appendChild(option);
+            });
+        }
 
-        select.innerHTML = '<option value="">Seleccione Estación</option>';
-        
-        // Llenamos el select del Nuevo Pedido usando la base
-        estacionesBase.forEach(est => {
-            const option = document.createElement('option');
-            option.value = est.ID_Estacion; 
-            option.textContent = est.Nombre;
-            select.appendChild(option);
-        });
+        // Una vez cargados los datos, dibujamos las tarjetas
+        dibujarEstaciones();
 
-        if (valorActual) select.value = valorActual;
     } catch (e) {
-        console.error("Error cargando estaciones", e);
+        console.error("Error detallado cargando estaciones:", e);
+        document.getElementById('estacionesCardsContainer').innerHTML = 
+            `<div class="text-center p-10 text-red-500">Error de conexión con el servidor.</div>`;
     }
 }
 
