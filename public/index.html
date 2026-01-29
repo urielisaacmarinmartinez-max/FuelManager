@@ -285,12 +285,45 @@
         document.getElementById('userStation').innerText = userData.estaciones;
         document.getElementById('userInitials').innerText = userData.nombre.substring(0, 2);
 
+        configurarInterfazPorRol(userData.rol);
+
         await cargarEstaciones();
         await cargarPedidosDashboard(); // <--- Carga los pedidos al iniciar
 
         // ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
         setInterval(sincronizar, 30000);
     }
+
+    function configurarInterfazPorRol(rol) {
+    if (rol === 'Fletera') {
+        // 1. Ocultar botones que no corresponden (Usando el texto que contienen)
+        const enlaces = document.querySelectorAll('nav a, aside a'); // Ajusta al selector de tu menú
+        enlaces.forEach(link => {
+            const texto = link.innerText.toLowerCase();
+            if (texto.includes('estaciones') || texto.includes('créditos') || texto.includes('creditos')) {
+                link.style.display = 'none';
+            }
+        });
+
+        // 2. Agregar nuevas opciones: Operadores y Unidades
+        // Buscamos el contenedor del menú para inyectar los nuevos botones
+        const menuContainer = document.querySelector('nav') || document.getElementById('sidebarMenu'); 
+        
+        if (menuContainer) {
+            const nuevosItems = `
+                <a href="#" onclick="irOperadores()" class="flex items-center gap-3 px-6 py-4 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all rounded-2xl group">
+                    <i class="fas fa-users-cog text-lg"></i>
+                    <span class="font-bold text-sm uppercase tracking-widest">Operadores</span>
+                </a>
+                <a href="#" onclick="irUnidades()" class="flex items-center gap-3 px-6 py-4 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all rounded-2xl group">
+                    <i class="fas fa-truck-moving text-lg"></i>
+                    <span class="font-bold text-sm uppercase tracking-widest">Unidades</span>
+                </a>
+            `;
+            menuContainer.insertAdjacentHTML('beforeend', nuevosItems);
+        }
+    }
+}
 
     async function sincronizar() {
         const icon = document.getElementById('syncIcon');
@@ -701,6 +734,28 @@ document.getElementById('tirillaForm').onsubmit = async (e) => {
         btn.innerText = "Guardar Tirilla";
     }
 };
+
+function irOperadores() {
+    console.log("Navegando a Operadores...");
+    // Aquí ocultas las otras vistas y muestras la de Operadores
+    ocultarTodasLasVistas();
+    document.getElementById('vistaOperadores').classList.remove('hidden');
+}
+
+function irUnidades() {
+    console.log("Navegando a Unidades...");
+    ocultarTodasLasVistas();
+    document.getElementById('vistaUnidades').classList.remove('hidden');
+}
+
+// Función auxiliar para no repetir código
+function ocultarTodasLasVistas() {
+    const vistas = ['dashboardView', 'estacionesView', 'pedidosView', 'vistaOperadores', 'vistaUnidades'];
+    vistas.forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.classList.add('hidden');
+    });
+}
 
 function irMisPedidos() {
     console.log("Cambiando a vista Mis Pedidos...");
