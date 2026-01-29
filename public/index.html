@@ -789,12 +789,59 @@ container.innerHTML = pedidos.map(p => {
     }
 }
 
-<div id="modalDetallesPedido" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+// --- FUNCIONES DE LÓGICA DEL MODAL DE DETALLES ---
+async function verDetallePedido(id) {
+    const userData = JSON.parse(localStorage.getItem('usuario'));
+    if (!userData) return;
+
+    const modal = document.getElementById('modalDetallesPedido');
+    modal.classList.remove('hidden');
+    
+    try {
+        const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
+        const p = await response.json();
+
+        document.getElementById('det_estacion').textContent = p.estacion;
+        document.getElementById('det_status').textContent = p.estatus;
+        document.getElementById('det_producto').textContent = p.producto;
+        document.getElementById('det_litros').textContent = `${p.litros} L`;
+
+        const areaLogistica = document.getElementById('area_logistica_exclusiva');
+        if (userData.rol !== 'Gerente Estación') {
+            areaLogistica.classList.remove('hidden');
+            document.getElementById('det_orden').textContent = p.orden || 'PENDIENTE';
+        } else {
+            areaLogistica.classList.add('hidden');
+        }
+
+        document.getElementById('det_fletera').textContent = p.fletera || 'ESPERANDO ASIGNACIÓN...';
+        
+        const bloqueUnidad = document.getElementById('det_bloque_unidad');
+        if (p.unidad) {
+            bloqueUnidad.classList.remove('hidden');
+            document.getElementById('det_unidad').textContent = `${p.unidad} (${p.placa1 || ''})`;
+            document.getElementById('det_eta').textContent = p.eta || '--:--';
+        } else {
+            bloqueUnidad.classList.add('hidden');
+        }
+    } catch (e) {
+        console.error("Error al cargar detalles:", e);
+    }
+}
+
+function cerrarModalDetalles() {
+    document.getElementById('modalDetallesPedido').classList.add('hidden');
+}
+
+// LANZADOR INICIAL
+window.onload = initDashboard;
+
+</script> <div id="modalDetallesPedido" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <div>
-                <h2 id="det_estacion" class="text-2xl font-black text-slate-900 uppercase leading-none">ESTACIÓN NOMBRE</h2>
-                <p id="det_status" class="text-[10px] font-black tracking-[0.2em] mt-2 px-3 py-1 bg-orange-100 text-orange-600 rounded-full inline-block uppercase italic">PENDIENTE</p>
+                <h2 id="det_estacion" class="text-2xl font-black text-slate-900 uppercase leading-none italic">ESTACIÓN</h2>
+                <p id="det_status" class="text-[10px] font-black tracking-[0.2em] mt-2 px-3 py-1 bg-orange-100 text-orange-600 rounded-full inline-block uppercase">ESTATUS</p>
             </div>
             <button onclick="cerrarModalDetalles()" class="h-10 w-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 transition-all">
                 <i class="fas fa-times"></i>
@@ -807,14 +854,15 @@ container.innerHTML = pedidos.map(p => {
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-[9px] font-bold text-slate-400 uppercase">Producto</p>
-                        <p id="det_producto" class="font-bold text-slate-700">Magna</p>
+                        <p id="det_producto" class="font-bold text-slate-700">--</p>
                     </div>
                     <div>
                         <p class="text-[9px] font-bold text-slate-400 uppercase">Litros Solicitados</p>
-                        <p id="det_litros" class="font-bold text-slate-700">31,000 L</p>
+                        <p id="det_litros" class="font-bold text-slate-700">-- L</p>
                     </div>
                 </div>
-                <div id="area_logistica_exclusiva" class="hidden"> <p class="text-[9px] font-bold text-slate-400 uppercase">Orden de Carga</p>
+                <div id="area_logistica_exclusiva" class="hidden"> 
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Orden de Carga</p>
                     <p id="det_orden" class="font-black text-blue-600 text-lg">#----</p>
                 </div>
             </div>
@@ -823,7 +871,7 @@ container.innerHTML = pedidos.map(p => {
                 <h4 class="text-[11px] font-black text-slate-300 uppercase tracking-widest">Seguimiento de Unidad</h4>
                 <div id="det_datos_transporte">
                     <p class="text-[9px] font-bold text-slate-400 uppercase">Fletera Asignada</p>
-                    <p id="det_fletera" class="font-bold text-slate-700 italic">Esperando asignación...</p>
+                    <p id="det_fletera" class="font-bold text-slate-700 italic">--</p>
                     
                     <div id="det_bloque_unidad" class="mt-4 hidden">
                         <div class="grid grid-cols-2 gap-2">
@@ -845,65 +893,9 @@ container.innerHTML = pedidos.map(p => {
             <button id="btn_cancelar_pedido" class="flex-1 py-4 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase hover:bg-red-500 hover:text-white transition-all">
                 Cancelar Pedido
             </button>
-            <button id="btn_accion_fletera" class="hidden flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-blue-200">
-                Confirmar Carga
-            </button>
         </div>
     </div>
 </div>
 
-// --- FUNCIÓN PARA VER DETALLES DEL PEDIDO ---
-async function verDetallePedido(id) {
-    const userData = JSON.parse(localStorage.getItem('usuario'));
-    if (!userData) return;
-
-    // 1. Abrimos el modal y mostramos "Cargando..."
-    const modal = document.getElementById('modalDetallesPedido');
-    modal.classList.remove('hidden');
-    
-    try {
-        // Buscamos los datos del pedido (puedes usar el ID para pedirlo al servidor)
-        const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
-        const p = await response.json();
-
-        // 2. Llenamos los datos básicos
-        document.getElementById('det_estacion').textContent = p.estacion;
-        document.getElementById('det_status').textContent = p.estatus;
-        document.getElementById('det_producto').textContent = p.producto;
-        document.getElementById('det_litros').textContent = `${p.litros} L`;
-
-        // 3. SEGURIDAD: Solo mostrar Orden de Carga si NO es Gerente de Estación
-        const areaLogistica = document.getElementById('area_logistica_exclusiva');
-        if (userData.rol !== 'Gerente Estación') {
-            areaLogistica.classList.remove('hidden');
-            document.getElementById('det_orden').textContent = p.orden || 'PENDIENTE';
-        } else {
-            areaLogistica.classList.add('hidden');
-        }
-
-        // 4. Datos de Transporte
-        document.getElementById('det_fletera').textContent = p.fletera || 'ESPERANDO ASIGNACIÓN...';
-        
-        const bloqueUnidad = document.getElementById('det_bloque_unidad');
-        if (p.unidad) {
-            bloqueUnidad.classList.remove('hidden');
-            document.getElementById('det_unidad').textContent = `${p.unidad} (${p.placa1})`;
-            document.getElementById('det_eta').textContent = p.eta || '--:--';
-        } else {
-            bloqueUnidad.classList.add('hidden');
-        }
-
-    } catch (e) {
-        console.error("Error al cargar detalles:", e);
-        alert("No se pudo cargar la información del pedido.");
-    }
-}
-
-function cerrarModalDetalles() {
-    document.getElementById('modalDetallesPedido').classList.add('hidden');
-}
-
-    window.onload = initDashboard;
-</script>
 </body>
 </html>
