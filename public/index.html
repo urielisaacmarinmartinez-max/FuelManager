@@ -804,15 +804,20 @@ async function verDetallePedido(id) {
     const modal = document.getElementById('modalDetallesPedido');
     modal.classList.remove('hidden');
     
+    // Ponemos textos de "Cargando..." para que el usuario vea actividad
+    document.getElementById('det_estacion').textContent = "Cargando...";
+
     try {
         const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
         const p = await response.json();
 
+        // Datos básicos
         document.getElementById('det_estacion').textContent = p.estacion;
         document.getElementById('det_status').textContent = p.estatus;
         document.getElementById('det_producto').textContent = p.producto;
         document.getElementById('det_litros').textContent = `${p.litros} L`;
 
+        // Lógica de Visibilidad por Rol (Gerente vs Logística)
         const areaLogistica = document.getElementById('area_logistica_exclusiva');
         if (userData.rol !== 'Gerente Estación') {
             areaLogistica.classList.remove('hidden');
@@ -821,18 +826,26 @@ async function verDetallePedido(id) {
             areaLogistica.classList.add('hidden');
         }
 
+        // Datos de Transporte (Aquí usamos tus nuevas columnas)
         document.getElementById('det_fletera').textContent = p.fletera || 'ESPERANDO ASIGNACIÓN...';
         
         const bloqueUnidad = document.getElementById('det_bloque_unidad');
-        if (p.unidad) {
+        if (p.unidad || p.operador) { // Si hay unidad u operador, mostramos el bloque
             bloqueUnidad.classList.remove('hidden');
-            document.getElementById('det_unidad').textContent = `${p.unidad} (${p.placa1 || ''})`;
+            
+            // Si tienes un campo para operador en el HTML, úsalo, si no, lo añadimos a la unidad
+            document.getElementById('det_unidad').textContent = `${p.unidad || 'S/N'} - ${p.placa1 || ''}`;
             document.getElementById('det_eta').textContent = p.eta || '--:--';
+            
+            // Tip: Si quieres mostrar el operador y no tienes ID, puedes concatenarlo aquí:
+            // document.getElementById('det_unidad').innerHTML += `<br><span class="text-[9px]">Operador: ${p.operador || 'N/A'}</span>`;
         } else {
             bloqueUnidad.classList.add('hidden');
         }
+
     } catch (e) {
         console.error("Error al cargar detalles:", e);
+        document.getElementById('det_estacion').textContent = "Error al cargar";
     }
 }
 
