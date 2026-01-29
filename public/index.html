@@ -279,16 +279,15 @@
             window.location.href = '/login.html';
             return;
         }
+configurarInterfazPorRol(userData.rol);
+
+        await cargarEstaciones();
+        await cargarPedidosDashboard();
 
         document.getElementById('userName').innerText = userData.nombre;
         document.getElementById('welcomeMsg').innerText = `Hola, ${userData.nombre.split(' ')[0]}`;
         document.getElementById('userStation').innerText = userData.estaciones;
         document.getElementById('userInitials').innerText = userData.nombre.substring(0, 2);
-
-        configurarInterfazPorRol(userData.rol);
-
-        await cargarEstaciones();
-        await cargarPedidosDashboard(); // <--- Carga los pedidos al iniciar
 
         // ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
         setInterval(sincronizar, 30000);
@@ -296,35 +295,34 @@
 
     function configurarInterfazPorRol(rol) {
     if (rol === 'Fletera') {
-        // 1. Ocultar botones no deseados de forma infalible
-        const enlaces = document.querySelectorAll('nav a, aside a'); 
-        enlaces.forEach(link => {
-            const texto = link.innerText.trim().toLowerCase();
-            // Agregamos "estaciones" a la lista de eliminación
-            if (texto.includes('estaciones') || texto.includes('créditos') || texto.includes('creditos')) {
-                link.style.setProperty('display', 'none', 'important');
+        // 1. OCULTAR "Mis Estaciones" y "Mis Créditos"
+        // Buscamos todos los enlaces y si contienen la palabra clave, los eliminamos del mapa
+        const links = document.querySelectorAll('nav a');
+        links.forEach(link => {
+            const contenido = link.textContent.toLowerCase();
+            if (contenido.includes('estaciones') || contenido.includes('créditos') || contenido.includes('creditos')) {
+                link.classList.add('hidden'); // Oculta usando Tailwind
+                link.style.display = 'none';   // Refuerzo con CSS puro
             }
         });
 
-        // 2. Agregar nuevas opciones: Operadores y Unidades
-        // Buscamos el contenedor del menú para inyectar los nuevos botones
+        // 2. INSERTAR NUEVOS BOTONES (Diseño idéntico)
         const menuContainer = document.querySelector('nav div.space-y-2') || document.querySelector('nav');
         
-        if (menuContainer) {
-            // Eliminamos duplicados antes de insertar (por si se llama dos veces la función)
-            if (!document.getElementById('btn-operadores')) {
-                const nuevosItems = `
-                    <a href="#" id="btn-operadores" onclick="irOperadores()" class="flex items-center p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl mb-2 transition-all">
-                        <span class="material-icons-outlined mr-3 text-[20px]">badge</span>
-                        <span class="font-bold">Operadores</span>
-                    </a>
-                    <a href="#" id="btn-unidades" onclick="irUnidades()" class="flex items-center p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl mb-2 transition-all">
-                        <span class="material-icons-outlined mr-3 text-[20px]">local_shipping</span>
-                        <span class="font-bold">Unidades</span>
-                    </a>
-                `;
-                menuContainer.insertAdjacentHTML('beforeend', nuevosItems);
-            }
+        if (menuContainer && !document.getElementById('btn-operadores')) {
+            const estiloClases = "flex items-center p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl mb-2 transition-all";
+            
+            const nuevosItems = `
+                <a href="#" id="btn-operadores" onclick="irOperadores()" class="${estiloClases}">
+                    <span class="material-icons-outlined mr-3" style="font-size: 20px;">badge</span>
+                    <span class="font-bold">Operadores</span>
+                </a>
+                <a href="#" id="btn-unidades" onclick="irUnidades()" class="${estiloClases}">
+                    <span class="material-icons-outlined mr-3" style="font-size: 20px;">local_shipping</span>
+                    <span class="font-bold">Unidades</span>
+                </a>
+            `;
+            menuContainer.insertAdjacentHTML('beforeend', nuevosItems);
         }
     }
 }
