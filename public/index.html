@@ -548,11 +548,16 @@ function irMisEstaciones() {
     } else {
         console.error("No se encontraron los contenedores de vista");
     }
+    window.scrollTo(0, 0);
 }
 
 function irDashboard() {
     document.getElementById('estacionesView').classList.add('hidden');
     document.getElementById('dashboardView').classList.remove('hidden');
+    document.getElementById('pedidosView').classList.add('hidden');
+    
+    // Opcional: Volver el scroll al inicio de la página
+    window.scrollTo(0, 0);
 }
 
 function dibujarEstaciones() {
@@ -696,6 +701,8 @@ function irMisPedidos() {
         // Cargamos los pedidos con el filtro inicial "Todos"
         renderizarPedidosLista('Todos');
     }
+    window.scrollTo(0, 0);
+    renderizarPedidosLista('Todos');
 }
 
 function filtrarPedidos(estatus) {
