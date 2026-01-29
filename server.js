@@ -135,7 +135,8 @@ app.post('/api/pedidos', async (req, res) => {
 
 // 4. OBTENER PEDIDOS (DASHBOARD)
 app.get('/api/obtener-pedidos', async (req, res) => {
-    const { estaciones } = req.query; // Recibe los IDs, ej: "EST_004, EST_023"
+    // Agregamos 'rol' a la destructuración para recibirlo desde el frontend
+    const { estaciones, rol } = req.query; 
     
     try {
         await doc.loadInfo();
@@ -145,24 +146,34 @@ app.get('/api/obtener-pedidos', async (req, res) => {
         const rowsPedidos = await sheetPedidos.getRows();
         const rowsEst = await sheetEst.getRows();
 
-        // 1. Creamos un mapa de ID -> Nombre (ej: "EST_001" -> "ALDIA DORADA")
-        const mapaNombres = {};
-        rowsEst.forEach(r => {
-            mapaNombres[r.get('ID_Estacion')] = r.get('Nombre');
-        });
+        // --- LÓGICA DE FILTRADO INTELIGENTE ---
+        let filasFiltradas = [];
 
-        // 2. Creamos una lista de nombres de estaciones que el usuario tiene permitidas
-        const idsPermitidos = estaciones ? estaciones.split(',').map(e => e.trim()) : [];
-        const nombresPermitidos = idsPermitidos.map(id => mapaNombres[id]).filter(n => n);
+        if (rol === 'Fletera') {
+            // Si es Fletera, 'estaciones' trae el nombre de la compañía (ej: "CHIPILO")
+            // Filtramos directamente sobre la columna FLETERA del Excel
+            filasFiltradas = rowsPedidos.filter(row => 
+                row.get('FLETERA') === estaciones
+            );
+        } else {
+            // Lógica original para Gerentes y otros roles
+            const mapaNombres = {};
+            rowsEst.forEach(r => {
+                mapaNombres[r.get('ID_Estacion')] = r.get('Nombre');
+            });
 
-        // 3. Filtramos los pedidos comparando por el NOMBRE de la estación
-        const filasFiltradas = rowsPedidos.filter(row => {
-            if (estaciones === 'TODAS') return true;
-            return nombresPermitidos.includes(row.get('ESTACIÓN'));
-        });
+            const idsPermitidos = estaciones ? estaciones.split(',').map(e => e.trim()) : [];
+            const nombresPermitidos = idsPermitidos.map(id => mapaNombres[id]).filter(n => n);
 
-        const pedidos = filasFiltradas.reverse().slice(0, 6).map(row => ({
-            id: row.get('FOLIO'), // <--- AHORA ENVIAMOS EL FOLIO COMO ID
+            filasFiltradas = rowsPedidos.filter(row => {
+                if (estaciones === 'TODAS') return true;
+                return nombresPermitidos.includes(row.get('ESTACIÓN'));
+            });
+        }
+        // --- FIN DE LÓGICA DE FILTRADO ---
+
+        const pedidos = filasFiltradas.reverse().slice(0, 15).map(row => ({
+            id: row.get('FOLIO'),
             fecha: row.get('FECHA DE REGISTRO'),
             estacion: row.get('ESTACIÓN'),
             producto: row.get('TIPO DE PRODUCTO'),
