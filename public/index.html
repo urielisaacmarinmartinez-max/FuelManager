@@ -736,7 +736,7 @@ async function renderizarPedidosLista(filtro = 'Todos') {
     container.innerHTML = '<div class="p-10 text-center text-slate-400 animate-pulse font-bold uppercase text-xs tracking-widest">Filtrando pedidos...</div>';
 
     try {
-        const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}`);
+        const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}`);
         const data = await response.json();
         let pedidos = data.pedidos || [];
 

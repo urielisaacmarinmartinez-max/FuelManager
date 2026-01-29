@@ -150,12 +150,12 @@ app.get('/api/obtener-pedidos', async (req, res) => {
         let filasFiltradas = [];
 
         if (rol === 'Fletera') {
-            // Si es Fletera, 'estaciones' trae el nombre de la compañía (ej: "CHIPILO")
-            // Filtramos directamente sobre la columna FLETERA del Excel
-            filasFiltradas = rowsPedidos.filter(row => 
-                row.get('FLETERA') === estaciones
-            );
-        } else {
+    console.log("Filtrando para fletera:", estaciones);
+    filasFiltradas = rowsPedidos.filter(row => {
+        console.log("Comparando:", row.get('FLETERA'), "con", estaciones);
+        return row.get('FLETERA') === estaciones;
+    });
+} else {
             // Lógica original para Gerentes y otros roles
             const mapaNombres = {};
             rowsEst.forEach(r => {
