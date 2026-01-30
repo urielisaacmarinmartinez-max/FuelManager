@@ -295,39 +295,41 @@
     }
 
     function configurarInterfazPorRol(rol) {
-    if (rol === 'Fletera') {
-        // 1. Ocultar botones que no corresponden (Usando el texto que contienen)
-        const enlaces = document.querySelectorAll('nav a, aside a'); // Ajusta al selector de tu menú
-        enlaces.forEach(link => {
-            const texto = link.innerText.toLowerCase();
-            if (texto.includes('estaciones') || texto.includes('créditos') || texto.includes('creditos')) {
-                link.style.display = 'none';
-            }
-        });
+    // 1. Si no es Fletera, nos aseguramos de que todo sea visible y salimos
+    if (rol !== 'Fletera') {
+        const todosLosBotones = document.querySelectorAll('nav button');
+        todosLosBotones.forEach(btn => btn.style.display = 'flex');
+        return; 
+    }
 
-        // 2. Agregar nuevas opciones: Operadores y Unidades
-        // Buscamos el contenedor del menú para inyectar los nuevos botones
-        // 3. INSERTAR BOTONES (Operadores y Unidades en minúsculas)
-    const menuContainer = document.querySelector('nav .space-y-2') || document.querySelector('nav');
-    
-        if (menuContainer && !document.getElementById('btn-operadores')) {
-        // Usamos exactamente tu clase de diseño
-        const estiloClase = "flex items-center p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl mb-2 transition-all";
-        
-            const nuevosItems = `
-                <a href="#" onclick="irOperadores()" class="flex items-center gap-3 px-6 py-4 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all rounded-2xl group">
-                    <i class="fas fa-users-cog text-lg"></i>
-                    <span class="font-bold text-sm uppercase tracking-widest">Operadores</span>
-                </a>
-                <a href="#" onclick="irUnidades()" class="w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover: text-white rounded-2xl transition-all fant-semibold text-left">
-                    <i class="fas fa-truck-moving text-lg"></i>
-                    <span class="font-bold text-sm uppercase tracking-widest">Unidades</span>
-                </a>
-            `;
-            menuContainer.insertAdjacentHTML('beforeend', nuevosItems);
+    // 2. Lógica para Fletera: Ocultar usando el texto exacto de tus botones
+    const botones = document.querySelectorAll('nav button');
+    botones.forEach(btn => {
+        const texto = btn.innerText.toLowerCase();
+        if (texto.includes('estaciones') || texto.includes('créditos') || texto.includes('creditos')) {
+            btn.style.setProperty('display', 'none', 'important');
         }
+    });
+
+    // 3. Insertar nuevos botones con FontAwesome (Igual que tus originales)
+    const menuContainer = document.querySelector('nav');
+    
+    if (menuContainer && !document.getElementById('btn-operadores')) {
+        // Usamos exactamente tu clase de los botones "Mis Estaciones/Pedidos"
+        const estiloClase = "w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left";
+        
+        const htmlNuevos = `
+            <button id="btn-operadores" onclick="irOperadores()" class="${estiloClase}">
+                <i class="fas fa-users-cog"></i> Operadores
+            </button>
+            <button id="btn-unidades" onclick="irUnidades()" class="${estiloClase}">
+                <i class="fas fa-truck-moving"></i> Unidades
+            </button>
+        `;
+        menuContainer.insertAdjacentHTML('beforeend', htmlNuevos);
     }
 }
+
 
     async function sincronizar() {
         const icon = document.getElementById('syncIcon');
