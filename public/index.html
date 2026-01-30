@@ -886,7 +886,6 @@ container.innerHTML = pedidos.map(p => {
     }
 }
 
-// --- FUNCIONES DE LÓGICA DEL MODAL DE DETALLES ---
 async function verDetallePedido(id) {
     const userData = JSON.parse(localStorage.getItem('usuario'));
     if (!userData) return;
@@ -894,43 +893,68 @@ async function verDetallePedido(id) {
     const modal = document.getElementById('modalDetallesPedido');
     modal.classList.remove('hidden');
     
-    // Ponemos textos de "Cargando..." para que el usuario vea actividad
     document.getElementById('det_estacion').textContent = "Cargando...";
 
     try {
         const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
         const p = await response.json();
 
-        // Datos básicos
+        // 1. LÓGICA DE VISIBILIDAD DE ESTATUS (Punto 11)
+        // Si es Gerente y Logística NO ha confirmado/reubicado, forzamos "Pendiente"
+        let estatusParaMostrar = p.estatus;
+        let esGerente = userData.rol === 'Gerente Estación';
+        let estaConfirmado = p.confirmacion_reubicacion && p.confirmacion_reubicacion.trim() !== "";
+
+        if (esGerente && !estaConfirmado) {
+            estatusParaMostrar = "Pendiente";
+        }
+
+        // 2. RELLENAR DATOS BÁSICOS
         document.getElementById('det_estacion').textContent = p.estacion;
-        document.getElementById('det_status').textContent = p.estatus;
+        document.getElementById('det_status').textContent = estatusParaMostrar;
         document.getElementById('det_producto').textContent = p.producto;
         document.getElementById('det_litros').textContent = `${p.litros} L`;
+        
+        // Mostrar Folio (Punto 1)
+        if(document.getElementById('det_folio')) {
+            document.getElementById('det_folio').textContent = p.folio || 'S/F';
+        }
 
-        // Lógica de Visibilidad por Rol (Gerente vs Logística)
+        // 3. LÓGICA DE ORDEN DE CARGA (Punto 12)
         const areaLogistica = document.getElementById('area_logistica_exclusiva');
-        if (userData.rol !== 'Gerente Estación') {
+        if (esGerente) {
+            areaLogistica.classList.add('hidden'); // Gerente nunca ve la Orden
+        } else {
             areaLogistica.classList.remove('hidden');
             document.getElementById('det_orden').textContent = p.orden || 'PENDIENTE';
-        } else {
-            areaLogistica.classList.add('hidden');
         }
         
-        // Datos de Transporte (Aquí usamos tus nuevas columnas)
-        document.getElementById('det_fletera').textContent = p.fletera || 'ESPERANDO ASIGNACIÓN...';
-        
+        // 4. DATOS DE TRANSPORTE (Solo visibles para Gerente si ya está confirmado)
+        const bloqueTransporte = document.getElementById('det_datos_transporte'); 
         const bloqueUnidad = document.getElementById('det_bloque_unidad');
-        if (p.unidad || p.operador) { // Si hay unidad u operador, mostramos el bloque
-            bloqueUnidad.classList.remove('hidden');
-            
-            // Si tienes un campo para operador en el HTML, úsalo, si no, lo añadimos a la unidad
-            document.getElementById('det_unidad').textContent = `${p.unidad || 'S/N'} - ${p.placa1 || ''}`;
-            document.getElementById('det_eta').textContent = p.eta || '--:--';
-            
-            // Tip: Si quieres mostrar el operador y no tienes ID, puedes concatenarlo aquí:
-            // document.getElementById('det_unidad').innerHTML += `<br><span class="text-[9px]">Operador: ${p.operador || 'N/A'}</span>`;
+
+        if (esGerente && !estaConfirmado) {
+            // Si el gerente no debe ver el avance, ocultamos los datos de la fletera/unidad
+            if(bloqueTransporte) bloqueTransporte.classList.add('hidden');
         } else {
-            bloqueUnidad.classList.add('hidden');
+            if(bloqueTransporte) bloqueTransporte.classList.remove('hidden');
+            document.getElementById('det_fletera').textContent = p.fletera || 'ESPERANDO ASIGNACIÓN...';
+
+            if (p.unidad || p.operador) {
+                bloqueUnidad.classList.remove('hidden');
+                document.getElementById('det_unidad').textContent = `${p.unidad || 'S/N'} - ${p.placa1 || ''}`;
+                document.getElementById('det_eta').textContent = p.eta || '--:--';
+            } else {
+                bloqueUnidad.classList.add('hidden');
+            }
+        }
+
+        // 5. LÓGICA DE CANCELACIÓN (Punto 23 y 24)
+        if (p.estatus === 'Cancelado') {
+            document.getElementById('det_status').classList.replace('bg-orange-100', 'bg-red-100');
+            document.getElementById('det_status').classList.replace('text-orange-600', 'text-red-600');
+            // Podrías mostrar el motivo aquí si tienes el ID en el HTML
+            console.log("Cancelado por:", p.cancelacion_pedido, "Motivo:", p.motivo_cancelacion);
         }
 
     } catch (e) {
