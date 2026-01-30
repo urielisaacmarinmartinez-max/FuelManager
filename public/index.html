@@ -967,6 +967,60 @@ function cerrarModalDetalles() {
     document.getElementById('modalDetallesPedido').classList.add('hidden');
 }
 
+async function procesarCancelacion() {
+    // 1. Obtener el ID del pedido que está abierto en el modal
+    // Usaremos el texto del folio o un atributo que guardaremos al abrir el modal
+    const folio = document.getElementById('det_folio')?.textContent;
+    if (!folio || folio === 'S/F') {
+        alert("No se pudo identificar el folio del pedido.");
+        return;
+    }
+
+    // 2. Pedir motivo (Punto 24 de tu lista)
+    const motivo = prompt("Indique el motivo de la cancelación (Obligatorio):");
+    
+    if (motivo === null) return; // Si el usuario presiona "Cancelar" en el prompt
+    
+    if (motivo.trim() === "") {
+        alert("Debe ingresar un motivo para cancelar el pedido.");
+        return;
+    }
+
+    // 3. Obtener datos del usuario que cancela (Punto 23)
+    const userData = JSON.parse(localStorage.getItem('usuario'));
+    const autor = `${userData.nombre} (${userData.rol})`;
+
+    if (!confirm("¿Estás seguro de que deseas cancelar este pedido? Esta acción no se puede deshacer.")) return;
+
+    try {
+        const datos = {
+            folio: folio,
+            estatus: 'Cancelado',
+            cancelacion_pedido: autor,
+            motivo_cancelacion: motivo
+        };
+
+        const response = await fetch('/api/cancelar-pedido', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+            alert('Pedido cancelado exitosamente.');
+            cerrarModalDetalles();
+            if (typeof sincronizar === 'function') sincronizar(); 
+        } else {
+            alert('Error al cancelar: ' + res.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert('Error de conexión con el servidor.');
+    }
+}
+
 // LANZADOR INICIAL
 window.onload = initDashboard;
 
