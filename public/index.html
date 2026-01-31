@@ -68,6 +68,24 @@
             <div>
                 <h1 class="text-4xl font-black tracking-tight text-slate-900">Dashboard</h1>
                 <p class="text-slate-500 font-medium mt-1 text-blue-600" id="welcomeMsg">Hola, cargando datos...</p>
+
+            <div class="lg:hidden px-4 mb-6">
+    <button onclick="togglePanel()" class="w-full bg-red-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-red-200 active:scale-95 transition-transform">
+        <div class="flex items-center gap-3">
+            <div class="bg-white/20 h-10 w-10 rounded-xl flex items-center justify-center">
+                <i class="fas fa-plus"></i>
+            </div>
+            <div class="text-left">
+                <p class="text-xs opacity-80 font-bold uppercase tracking-wider">¿Necesitas combustible?</p>
+                <p class="font-black text-lg">Nuevo Pedido</p>
+            </div>
+        </div>
+        <i class="fas fa-chevron-right opacity-50"></i>
+    </button>
+</div>
+
+<button onclick="togglePanel()" class="hidden lg:flex ..."> + Nuevo Pedido </button>
+    
             </div>
             <button onclick="togglePanel()" class="bg-red-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-red-200 hover:scale-105 active:scale-95 transition-all">
                 + Nuevo Pedido
@@ -1103,11 +1121,9 @@ window.onload = initDashboard;
         <span class="text-[10px] font-bold">Pedidos</span>
     </button>
 
-    <button onclick="togglePanel()" class="flex flex-col items-center gap-1 text-red-600">
-        <div class="bg-red-50 p-2 rounded-lg -mt-8 shadow-md border border-red-100">
-            <i class="fas fa-plus text-lg"></i>
-        </div>
-        <span class="text-[10px] font-bold mt-1">Nuevo</span>
+    <button onclick="alert('Próximamente: Configuración de cuenta')" class="flex flex-col items-center gap-1 w-16 text-slate-400">
+        <i class="fas fa-user-circle text-lg"></i>
+        <span class="text-[9px] font-bold">Cuenta</span>
     </button>
 
     <button onclick="logout()" class="flex flex-col items-center gap-1 text-slate-400">
