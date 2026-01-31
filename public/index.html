@@ -1086,5 +1086,35 @@ window.onload = initDashboard;
     </div>
 </div>
 
+<nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-3 flex justify-between items-center z-[100] shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+    
+    <button onclick="irDashboard()" class="flex flex-col items-center gap-1 text-blue-600">
+        <i class="fas fa-th-large text-lg"></i>
+        <span class="text-[10px] font-bold">Inicio</span>
+    </button>
+
+    <button onclick="irMisEstaciones()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600">
+        <i class="fas fa-store text-lg"></i>
+        <span class="text-[10px] font-bold">Estaciones</span>
+    </button>
+
+    <button onclick="irMisPedidos()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600">
+        <i class="fas fa-clipboard-list text-lg"></i>
+        <span class="text-[10px] font-bold">Pedidos</span>
+    </button>
+
+    <button onclick="togglePanel()" class="flex flex-col items-center gap-1 text-red-600">
+        <div class="bg-red-50 p-2 rounded-lg -mt-8 shadow-md border border-red-100">
+            <i class="fas fa-plus text-lg"></i>
+        </div>
+        <span class="text-[10px] font-bold mt-1">Nuevo</span>
+    </button>
+
+    <button onclick="logout()" class="flex flex-col items-center gap-1 text-slate-400">
+        <i class="fas fa-sign-out-alt text-lg"></i>
+        <span class="text-[10px] font-bold">Salir</span>
+    </button>
+</nav>
+
 </body>
 </html>
