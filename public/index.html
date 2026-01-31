@@ -503,33 +503,32 @@ async function cargarPedidosDashboard() {
             const idEstacion = document.getElementById('selEstacion').value;
             const est = estacionesData.find(e => (e.id || e.ID_Estacion) === idEstacion);
 
-            const pedido = {
-                "FOLIO": "MOB-" + Date.now(),
-    "FECHA DE REGISTRO": new Date().toLocaleString('es-MX'),
-                "ESTACIÓN": est.nombre || est.Nombre,
-                "TIPO DE PRODUCTO": document.getElementById('fuelType').value,
-    "LITROS": document.getElementById('fuelQty').value,
-    "TOTAL": document.getElementById('finalTotal').innerText,
-    "FECHA DE ENTREGA": document.getElementById('deliveryDate').value,
-    "PRIORIDAD": document.getElementById('orderPriority').value,
-    "ESTATUS": "Pendiente",
-    "USUARIO": userData.nombre,
+           const pedido = {
+                folio: "MOB-" + Date.now(),
+                estacion: est.nombre || est.Nombre,
+                combustible: document.getElementById('fuelType').value,
+                litros: document.getElementById('fuelQty').value,
+                total: document.getElementById('finalTotal').innerText,
+                fecha_entrega: document.getElementById('deliveryDate').value,
+                prioridad: document.getElementById('orderPriority').value,
+                estatus: 'Pendiente',
+                usuario: userData.nombre,
 
                 // Los campos 11 al 22 se envían vacíos inicialmente
-    "CONFIRMACIÓN O REUBICACIÓN": "",
-    "ORDEN": "",
-    "FLETERA": "",
-    "UNIDAD": "",
-    "PLACA 1": "",
-    "PLACA 2": "",
-    "OPERADOR": "",
-    "CANTIDAD EXACTA": "",
-    "ETA": "",
-    "FECHA DE DESCARGA": "",
-    "FACTURA": "",
-    "COMPRA": "",
-    "CANCELACIÓN DE PEDIDO": "",
-    "MOTIVO DE CANCELACIÓN": ""
+    confirmacion_reubicacion: '',
+    orden: '',
+    fletera: '',
+    unidad: '',
+    placa1: '',
+    placa2: '',
+    operador: '',
+    cantidad_exacta: '',
+    eta: '',
+    fecha_descarga: '',
+    factura: '',
+    compra: '',
+    cancelacion_pedido: '', // Vacío si no está cancelado
+    motivo_cancelacion: ''
 };
 
             const response = await fetch('/api/pedidos', {
