@@ -52,7 +52,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 2. CARGAR ESTACIONES (Ahora incluye datos de TIRILLAS)
+// 2. CARGAR ESTACIONES
 app.get('/api/estaciones', async (req, res) => {
     try {
         await doc.loadInfo();
@@ -66,13 +66,7 @@ app.get('/api/estaciones', async (req, res) => {
 
         const estaciones = rowsEst.map(row => {
             const id = row.get('ID_Estacion') || '';
-            // Buscamos los datos técnicos en la hoja de TIRILLAS
-            console.log(`Buscando ID: ${id} en TIRILLAS...`);
             const datosTirilla = rowsTir.find(t => t.get('ID_Estacion') === id);
-
-            if (!datosTirilla) {
-        console.log(`⚠️ No se encontró el ID ${id} en la hoja TIRILLAS`);
-    }
 
             return {
                 id: id,
@@ -84,24 +78,23 @@ app.get('/api/estaciones', async (req, res) => {
                     Supreme: parseFloat(String(row.get('Precio Supreme') || '0').replace(/[$,]/g, '')) || 0,
                     Diesel: parseFloat(String(row.get('Precio Diesel') || '0').replace(/[$,]/g, '')) || 0
                 },
-                // Datos de la hoja TIRILLAS
                 capacidad: {
-        extra: Number(datosTirilla?.get('CAP_EXTRA')) || 0,
-        supreme: Number(datosTirilla?.get('CAP_SUPREME')) || 0,
-        diesel: Number(datosTirilla?.get('CAP_DIESEL')) || 0
-               },
-    ventaPromedio: {
-        extra: Number(datosTirilla?.get('VTA_EXTRA')) || 0,
-        supreme: Number(datosTirilla?.get('VTA_SUPREME')) || 0,
-        diesel: Number(datosTirilla?.get('VTA_DIESEL')) || 0
-    },
-    volumenActual: {
-        extra: Number(datosTirilla?.get('VOL_EXTRA')) || 0,
-        supreme: Number(datosTirilla?.get('VOL_SUPREME')) || 0,
-        diesel: Number(datosTirilla?.get('VOL_DIESEL')) || 0
-    },
-    ultimaActualizacion: datosTirilla?.get('ULTIMA_ACTUALIZACION') || 'Sin fecha'
-};
+                    extra: Number(datosTirilla?.get('CAP_EXTRA')) || 0,
+                    supreme: Number(datosTirilla?.get('CAP_SUPREME')) || 0,
+                    diesel: Number(datosTirilla?.get('CAP_DIESEL')) || 0
+                },
+                ventaPromedio: {
+                    extra: Number(datosTirilla?.get('VTA_EXTRA')) || 0,
+                    supreme: Number(datosTirilla?.get('VTA_SUPREME')) || 0,
+                    diesel: Number(datosTirilla?.get('VTA_DIESEL')) || 0
+                },
+                volumenActual: {
+                    extra: Number(datosTirilla?.get('VOL_EXTRA')) || 0,
+                    supreme: Number(datosTirilla?.get('VOL_SUPREME')) || 0,
+                    diesel: Number(datosTirilla?.get('VOL_DIESEL')) || 0
+                },
+                ultimaActualizacion: datosTirilla?.get('ULTIMA_ACTUALIZACION') || 'Sin fecha'
+            };
         });
         res.json(estaciones);
     } catch (error) {
@@ -110,14 +103,18 @@ app.get('/api/estaciones', async (req, res) => {
     }
 });
 
-// 3. GUARDAR PEDIDO
+// 3. GUARDAR PEDIDO (CORREGIDO PARA ZONA HORARIA MX)
 app.post('/api/pedidos', async (req, res) => {
     const pedido = req.body;
     try {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Pedidos']; 
+        
+        // ASEGURAMOS QUE LA FECHA SEA MX SIEMPRE
+        const fechaFinal = pedido.fecha_registro || new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+
         await sheet.addRow({
-            'FECHA DE REGISTRO': pedido.fecha_registro || new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+            'FECHA DE REGISTRO': fechaFinal,
             'FOLIO': pedido.folio,
             'ESTACIÓN': pedido.estacion,
             'TIPO DE PRODUCTO': pedido.combustible,
@@ -130,15 +127,14 @@ app.post('/api/pedidos', async (req, res) => {
         });
         res.json({ success: true });
     } catch (error) {
+        console.error("Error al guardar pedido:", error);
         res.status(500).json({ success: false });
     }
 });
 
 // 4. OBTENER PEDIDOS (DASHBOARD)
 app.get('/api/obtener-pedidos', async (req, res) => {
-    // Agregamos 'rol' a la destructuración para recibirlo desde el frontend
     const { estaciones, rol } = req.query; 
-    
     try {
         await doc.loadInfo();
         const sheetPedidos = doc.sheetsByTitle['Pedidos'];
@@ -147,21 +143,13 @@ app.get('/api/obtener-pedidos', async (req, res) => {
         const rowsPedidos = await sheetPedidos.getRows();
         const rowsEst = await sheetEst.getRows();
 
-        // --- LÓGICA DE FILTRADO INTELIGENTE ---
         let filasFiltradas = [];
 
         if (rol === 'Fletera') {
-    console.log("Filtrando para fletera:", estaciones);
-    filasFiltradas = rowsPedidos.filter(row => {
-        console.log("Comparando:", row.get('FLETERA'), "con", estaciones);
-        return row.get('FLETERA') === estaciones;
-    });
-} else {
-            // Lógica original para Gerentes y otros roles
+            filasFiltradas = rowsPedidos.filter(row => row.get('FLETERA') === estaciones);
+        } else {
             const mapaNombres = {};
-            rowsEst.forEach(r => {
-                mapaNombres[r.get('ID_Estacion')] = r.get('Nombre');
-            });
+            rowsEst.forEach(r => { mapaNombres[r.get('ID_Estacion')] = r.get('Nombre'); });
 
             const idsPermitidos = estaciones ? estaciones.split(',').map(e => e.trim()) : [];
             const nombresPermitidos = idsPermitidos.map(id => mapaNombres[id]).filter(n => n);
@@ -171,7 +159,6 @@ app.get('/api/obtener-pedidos', async (req, res) => {
                 return nombresPermitidos.includes(row.get('ESTACIÓN'));
             });
         }
-        // --- FIN DE LÓGICA DE FILTRADO ---
 
         const pedidos = filasFiltradas.reverse().slice(0, 15).map(row => ({
             id: row.get('FOLIO'),
@@ -196,27 +183,26 @@ app.get('/api/obtener-pedidos', async (req, res) => {
     }
 });
 
-// 5. NUEVA RUTA: ACTUALIZAR VOLUMEN EN HOJA TIRILLAS
+// 5. ACTUALIZAR VOLUMEN (ZONA HORARIA MX)
 app.post('/api/actualizar-tirilla', async (req, res) => {
     const { id_estacion, volExtra, volSupreme, volDiesel } = req.body;
     try {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['TIRILLAS'];
         const rows = await sheet.getRows();
-        
-        const fila = rows.find(r => r.get('ESTACION') === id_estacion);
+        const fila = rows.find(r => r.get('ID_Estacion') === id_estacion);
         
         if (fila) {
             fila.set('VOL_EXTRA', volExtra);
             fila.set('VOL_SUPREME', volSupreme);
             fila.set('VOL_DIESEL', volDiesel);
-            // La fecha se actualiza vía App Script en Google Sheets o podemos ponerla aquí:
-            fila.set('ULTIMA_ACTUALIZACION', new Date().toLocaleString());
+            // USAMOS LA MISMA LÓGICA DE TIEMPO PARA TIRILLAS DESDE EL SERVER
+            fila.set('ULTIMA_ACTUALIZACION', new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }));
             
             await fila.save();
             res.json({ success: true });
         } else {
-            res.status(404).json({ success: false, message: "Estación no encontrada en TIRILLAS" });
+            res.status(404).json({ success: false, message: "Estación no encontrada" });
         }
     } catch (error) {
         console.error("Error al actualizar tirilla:", error);
@@ -224,16 +210,13 @@ app.post('/api/actualizar-tirilla', async (req, res) => {
     }
 });
 
-// 6. NUEVA RUTA: OBTENER DETALLE DE UN PEDIDO POR FOLIO
+// 6. OBTENER DETALLE
 app.get('/api/obtener-pedido-detallado', async (req, res) => {
-    const { id } = req.query; // Este 'id' será el FOLIO (ej: PED-101)
-    
+    const { id } = req.query; 
     try {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Pedidos'];
         const rows = await sheet.getRows();
-        
-        // Buscamos la fila que coincida con el FOLIO
         const p = rows.find(r => r.get('FOLIO') === id);
         
         if (p) {
@@ -255,7 +238,7 @@ app.get('/api/obtener-pedido-detallado', async (req, res) => {
         }
     } catch (error) {
         console.error("Error al obtener detalle:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+        res.status(500).json({ error: "Error interno" });
     }
 });
 
