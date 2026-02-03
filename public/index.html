@@ -563,66 +563,81 @@ async function cargarPedidosDashboard() {
     // LÓGICA PARA EL MODAL DE TIRILLAS (PUNTO 2)
     // ==========================================
     function abrirModalTirilla(id, nombre) {
-    // Buscamos de forma flexible para evitar errores de propiedad
+    console.log("Abriendo modal para:", id);
+    // Buscamos la estación considerando ambas posibilidades de nombre de propiedad
     const est = estacionesData.find(e => (e.id === id || e.ID_Estacion === id));
     
     document.getElementById('modalEstacionId').value = id;
     document.getElementById('modalEstacionNombre').innerText = nombre;
     
     if (est) {
-        // Asegúrate de que los IDs coincidan con los del HTML (volExtra, volSupreme, etc.)
-        document.getElementById('volExtra').value = est.vol_extra || est.VOL_EXTRA || '';
-        document.getElementById('volSupreme').value = est.vol_supreme || est.VOL_SUPREME || '';
-        document.getElementById('volDiesel').value = est.vol_diesel || est.VOL_DIESEL || '';
+        // Usamos ?? para que si el valor es 0, se mantenga 0 y no se borre
+        document.getElementById('volExtra').value = est.vol_extra ?? est.VOL_EXTRA ?? '';
+        document.getElementById('volSupreme').value = est.vol_supreme ?? est.VOL_SUPREME ?? '';
+        document.getElementById('volDiesel').value = est.vol_diesel ?? est.VOL_DIESEL ?? '';
     }
     
     document.getElementById('modalTirilla').classList.remove('hidden');
 }
+
 function cerrarModalTirilla() {
     document.getElementById('modalTirilla').classList.add('hidden');
+    document.getElementById('tirillaForm').reset();
 }
 
+// ÚNICO CONTROLADOR PARA EL FORMULARIO DE TIRILLA
 document.getElementById('tirillaForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
-    const id = document.getElementById('modalEstacionId').value;
+    const idEstacion = document.getElementById('modalEstacionId').value;
     
+    // Preparamos los datos asegurando que sean números
     const datos = {
-        id_estacion: id,
-        vol_extra: document.getElementById('volExtra').value,
-        vol_supreme: document.getElementById('volSupreme').value,
-        vol_diesel: document.getElementById('volDiesel').value,
+        id_estacion: idEstacion,
+        vol_extra: parseFloat(document.getElementById('volExtra').value) || 0,
+        vol_supreme: parseFloat(document.getElementById('volSupreme').value) || 0,
+        vol_diesel: parseFloat(document.getElementById('volDiesel').value) || 0,
         fecha_hora: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
     };
 
     btn.disabled = true;
-    btn.innerHTML = 'Guardando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
     try {
-        // Usa la ruta que corresponda a tu servidor actual
+        // PRIORIDAD: Intentar guardar en tu API de Node.js (Render)
         const response = await fetch('/api/actualizar-tirilla', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datos)
         });
 
-        if (response.ok) {
-            alert('¡Inventario actualizado!');
+        const resData = await response.json();
+
+        if (response.ok && resData.success) {
+            alert('¡Inventario actualizado correctamente!');
             cerrarModalTirilla();
-            if (typeof sincronizar === 'function') await sincronizar();
+            
+            // Refrescamos datos para actualizar las tarjetas visuales
+            if (typeof sincronizar === 'function') {
+                await sincronizar(); 
+            } else {
+                location.reload();
+            }
         } else {
-            throw new Error("Error en servidor");
+            throw new Error(resData.message || "Error en el servidor");
         }
+        
     } catch (error) {
-        console.error(error);
-        alert('Error al conectar con el servidor.');
+        console.error("Error al guardar tirilla:", error);
+        alert('No se pudo guardar: ' + error.message);
     } finally {
         btn.disabled = false;
         btn.innerText = "Guardar Tirilla";
     }
 };
 
-    // ... (aquí sigue tu función togglePanel o window.onload)
+
+    // ... (aquí sigue tu función togglePanel)
     function togglePanel() {
         const p = document.getElementById('sidePanel');
         const o = document.getElementById('overlay');
