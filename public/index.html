@@ -486,27 +486,27 @@ async function cargarPedidosDashboard() {
         }
     }
 
-    document.getElementById('orderForm').onsubmit = async (e) => {
+   document.getElementById('orderForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnConfirm');
     btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
 
     try {
         const userData = JSON.parse(localStorage.getItem('usuario'));
         const idEstacion = document.getElementById('selEstacion').value;
         const est = estacionesData.find(e => (e.id || e.ID_Estacion) === idEstacion);
 
-        // --- SOLUCIÓN HORA (MÉXICO) ---
-        // Creamos la fecha y restamos manualmente las 6 horas si el servidor es el problema,
-        // o usamos el formateador internacional robusto:
-        const fecha_registro_ok = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+        // --- SOLUCIÓN HORA (MÉXICO) - IGUAL A TIRILLAS ---
+        // Definimos el nombre exacto de la variable para evitar el ReferenceError
+        const fechaParaRegistro = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         const folioGenerado = "MOB-" + Math.floor(100000 + Math.random() * 900000);
 
         const pedido = {
-            id_estacion: idEstacion, // <-- ESTO ES LO QUE LE DA VIDA A LAS TIRILLAS
+            id_estacion: idEstacion,
             folio: folioGenerado,
-            fecha_registro: fechaParaRegistro,
-            estacion: est.nombre || est.Nombre,
+            fecha_registro: fechaParaRegistro, // Ahora sí coinciden los nombres
+            estacion: est.nombre || est.Nombre || est.ESTACION,
             combustible: document.getElementById('fuelType').value,
             litros: document.getElementById('fuelQty').value,
             total: document.getElementById('finalTotal').innerText,
@@ -514,35 +514,50 @@ async function cargarPedidosDashboard() {
             prioridad: document.getElementById('orderPriority').value,
             estatus: 'Pendiente',
             usuario: userData.nombre,
-            // Campos extra para mantener las 24 columnas si tu Excel lo requiere
+            // Relleno de columnas para mantener consistencia en la BD
             c11: "", c12: "", c13: "", c14: "", c15: "", c16: "", 
             c17: "", c18: "", c19: "", c20: "", c21: "", c22: "", c23: "", c24: ""
         };
 
+        const response = await fetch('/api/pedidos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pedido)
+        });
 
-            const response = await fetch('/api/pedidos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pedido)
-            });
-
-            const resData = await response.json();
-            
-            if (resData.success) {
-                alert('¡Pedido registrado con éxito!');
-                document.getElementById('orderForm').reset();
-                location.reload();
-            } else {
-                alert('Error al guardar pedido.');
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            alert('No se pudo conectar con el servidor.');
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Confirmar Orden";
+        // Verificamos si la respuesta es correcta
+        if (!response.ok) {
+            throw new Error('Error en la respuesta del servidor');
         }
-    };
+
+        const resData = await response.json();
+        
+        if (resData.success) {
+            alert('¡Pedido registrado con éxito!');
+            document.getElementById('orderForm').reset();
+            
+            // Si tienes la función togglePanel para cerrar el lateral, úsala aquí
+            if (typeof togglePanel === 'function') {
+                togglePanel();
+            }
+            
+            // Recarga o sincroniza
+            if (typeof sincronizar === 'function') {
+                await sincronizar();
+            } else {
+                location.reload();
+            }
+        } else {
+            alert('Error al guardar pedido: ' + (resData.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error("Error completo:", error);
+        alert('No se pudo conectar con el servidor o hubo un error en el proceso.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Confirmar Orden";
+    }
+};
 // ... (aquí terminan tus funciones de irDashboard o logout)
 
 // ==========================================
