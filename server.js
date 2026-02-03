@@ -160,7 +160,7 @@ app.get('/api/obtener-pedidos', async (req, res) => {
             });
         }
 
-        const pedidos = filasFiltradas.reverse().slice(0, 15).map(row => ({
+        const pedidos = filasFiltradas.reverse().slice(0, 3).map(row => ({
             id: row.get('FOLIO'),
             fecha: row.get('FECHA DE REGISTRO'),
             estacion: row.get('ESTACIÓN'),
