@@ -117,7 +117,8 @@ app.post('/api/pedidos', async (req, res) => {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Pedidos']; 
         await sheet.addRow({
-            'FECHA DE REGISTRO': new Date().toLocaleString(),
+            'FECHA DE REGISTRO': pedido.fecha_registro || new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+            'FOLIO': pedido.folio,
             'ESTACIÓN': pedido.estacion,
             'TIPO DE PRODUCTO': pedido.combustible,
             'LITROS': pedido.litros,
