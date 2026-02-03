@@ -505,7 +505,7 @@ async function cargarPedidosDashboard() {
         const pedido = {
             id_estacion: idEstacion, // <-- ESTO ES LO QUE LE DA VIDA A LAS TIRILLAS
             folio: folioGenerado,
-            fecha_registro: fechaMX,
+            fecha_registro: fechaParaRegistro,
             estacion: est.nombre || est.Nombre,
             combustible: document.getElementById('fuelType').value,
             litros: document.getElementById('fuelQty').value,
