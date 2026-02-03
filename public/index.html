@@ -489,34 +489,33 @@ async function cargarPedidosDashboard() {
    document.getElementById('orderForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnConfirm');
+    if (!btn) return; // Evita errores si el botón no se encuentra
+
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
     try {
         const userData = JSON.parse(localStorage.getItem('usuario'));
         const idEstacion = document.getElementById('selEstacion').value;
         const est = estacionesData.find(e => (e.id || e.ID_Estacion) === idEstacion);
 
-        // --- SOLUCIÓN HORA (MÉXICO) - IGUAL A TIRILLAS ---
-        // Definimos el nombre exacto de la variable para evitar el ReferenceError
+        // --- SOLUCIÓN DEFINITIVA AL REFERENCE ERROR ---
+        // Definimos la variable con el nombre EXACTO que usaremos abajo
         const fechaParaRegistro = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         const folioGenerado = "MOB-" + Math.floor(100000 + Math.random() * 900000);
 
         const pedido = {
             id_estacion: idEstacion,
             folio: folioGenerado,
-            fecha_registro: fechaParaRegistro, // Ahora sí coinciden los nombres
-            estacion: est.nombre || est.Nombre || est.ESTACION,
+            fecha_registro: fechaParaRegistro, // <--- Nombre unificado
+            estacion: est ? (est.nombre || est.Nombre) : 'Sin Nombre',
             combustible: document.getElementById('fuelType').value,
             litros: document.getElementById('fuelQty').value,
-            total: document.getElementById('finalTotal').innerText,
+            total: document.getElementById('finalTotal')?.innerText || "0", 
             fecha_entrega: document.getElementById('deliveryDate').value,
             prioridad: document.getElementById('orderPriority').value,
             estatus: 'Pendiente',
-            usuario: userData.nombre,
-            // Relleno de columnas para mantener consistencia en la BD
-            c11: "", c12: "", c13: "", c14: "", c15: "", c16: "", 
-            c17: "", c18: "", c19: "", c20: "", c21: "", c22: "", c23: "", c24: ""
+            usuario: userData ? userData.nombre : 'Usuario'
         };
 
         const response = await fetch('/api/pedidos', {
@@ -525,37 +524,22 @@ async function cargarPedidosDashboard() {
             body: JSON.stringify(pedido)
         });
 
-        // Verificamos si la respuesta es correcta
-        if (!response.ok) {
-            throw new Error('Error en la respuesta del servidor');
-        }
-
         const resData = await response.json();
         
         if (resData.success) {
             alert('¡Pedido registrado con éxito!');
-            document.getElementById('orderForm').reset();
-            
-            // Si tienes la función togglePanel para cerrar el lateral, úsala aquí
-            if (typeof togglePanel === 'function') {
-                togglePanel();
-            }
-            
-            // Recarga o sincroniza
-            if (typeof sincronizar === 'function') {
-                await sincronizar();
-            } else {
-                location.reload();
-            }
+            location.reload(); // Recarga limpia para actualizar dashboard y cerrar modal
         } else {
-            alert('Error al guardar pedido: ' + (resData.message || 'Error desconocido'));
+            alert('Error al guardar: ' + (resData.message || 'Error en servidor'));
         }
     } catch (error) {
-        console.error("Error completo:", error);
-        alert('No se pudo conectar con el servidor o hubo un error en el proceso.');
+        console.error("Error en envío:", error);
+        alert('No se pudo conectar con el servidor.');
     } finally {
-        btn.disabled = false;
-        btn.innerText = "Confirmar Orden";
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "Confirmar Orden";
+        }
     }
 };
 // ... (aquí terminan tus funciones de irDashboard o logout)
