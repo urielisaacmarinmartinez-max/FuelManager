@@ -673,9 +673,9 @@ async function cargarPedidosDashboard() {
         const userData = JSON.parse(localStorage.getItem('usuario'));
         if (!userData || !userData.estaciones) return;
 
-        const misEstacionesIds = userData.estaciones.split(',').map(s => s.trim());
-        const filtradas = estacionesData.filter(est => misEstacionesIds.includes(est.id));
-
+        const filtradas = estacionesData.filter(est => {
+        return misEstacionesIds.includes(est.id) || misEstacionesIds.includes(est.ID_Estacion);
+    });
         if (filtradas.length === 0) {
             container.innerHTML = `<div class="p-20 text-center"><p class="text-slate-400 font-bold">No hay datos disponibles.</p></div>`;
             return;
