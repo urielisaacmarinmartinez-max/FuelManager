@@ -807,90 +807,76 @@ async function verDetallePedido(id) {
 
     const modal = document.getElementById('modalDetallesPedido');
     modal.classList.remove('hidden');
-    
     document.getElementById('det_estacion').textContent = "Cargando...";
 
     try {
         const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
         const p = await response.json();
 
-        // 1. DETERMINAR VISIBILIDAD POR ROL
+        // --- EL DETECTIVE (Imprimirá en tu consola F12 los nombres reales de las columnas) ---
+        console.log("ESTRUCTURA REAL DE TU BASE DE DATOS:", p);
+
+        // 1. IDENTIFICAR ESTATUS
         let esGerente = userData.rol === 'Gerente Estación';
         let estaConfirmado = p.confirmacion_reubicacion && p.confirmacion_reubicacion.trim() !== "";
-        let estatusParaMostrar = (esGerente && !estaConfirmado) ? "Pendiente" : p.estatus;
+        document.getElementById('det_status').textContent = (esGerente && !estaConfirmado) ? "Pendiente" : (p.estatus || '---');
 
-        // 2. RELLENAR CABECERA
-        document.getElementById('det_estacion').textContent = p.estacion;
-        document.getElementById('det_status').textContent = estatusParaMostrar;
-
-        // 3. RELLENAR INFORMACIÓN PRINCIPAL
+        // 2. DATOS FIJOS (Los que ya te funcionan)
+        document.getElementById('det_estacion').textContent = p.estacion || '---';
         document.getElementById('det_producto').textContent = p.producto || '---';
         document.getElementById('det_litros').textContent = `${p.litros || '0'} L`;
+        document.getElementById('det_prioridad').textContent = p.prioridad || 'Normal';
 
-        if(document.getElementById('det_prioridad')) {
-            document.getElementById('det_prioridad').textContent = p.prioridad || 'Normal';
-            document.getElementById('det_prioridad').className = p.prioridad === 'Urgente' ? "font-bold text-red-600 uppercase" : "font-bold text-slate-700 uppercase";
-        }
-
-        // 4. FECHA DE SOLICITUD (Columna B)
-        // Buscamos todas las variantes posibles de nombre de columna
-        const fechaRaw = p['FECHA DE REGISTRO'] || p.fecha_de_registro || p.fechaderegistro || p.fecha_registro || p.fecha || '---';
+        // 3. BUSCADOR DINÁMICO DE FECHA (Columna B)
+        // Buscamos cualquier llave que contenga "fecha" o "registro"
+        const keyFecha = Object.keys(p).find(k => k.toLowerCase().includes('fecha') && k.toLowerCase().includes('registro')) || 'fecha_registro';
+        const fechaRaw = p[keyFecha] || p.fecha || '---';
+        
         const elFecha = document.getElementById('det_fecha_solicitud');
         const elHora = document.getElementById('det_hora_solicitud');
-
         if(elFecha) {
-            if (fechaRaw.includes(',')) {
-                const parts = fechaRaw.split(',');
-                elFecha.textContent = parts[0].trim();
-                if(elHora) elHora.textContent = parts[1].trim();
+            const parts = String(fechaRaw).split(',');
+            elFecha.textContent = parts[0].trim();
+            if(elHora) elHora.textContent = parts[1] ? parts[1].trim() : '';
+        }
+
+        // 4. BUSCADOR DINÁMICO DE CANTIDAD EXACTA (Columna R)
+        // Buscamos cualquier llave que tenga "cantidad" y "exacta"
+        const keyExacta = Object.keys(p).find(k => k.toLowerCase().includes('cantidad') && k.toLowerCase().includes('exacta'));
+        const valorExacto = keyExacta ? p[keyExacta] : (p.cantidad_exacta || p.litros_reales);
+        
+        const elCantEx = document.getElementById('det_cantidad_exacta_new');
+        if (elCantEx) {
+            if (valorExacto && valorExacto != "0" && valorExacto != "") {
+                elCantEx.textContent = `${valorExacto} L`;
+                elCantEx.className = "text-sm font-black text-slate-800";
             } else {
-                elFecha.textContent = fechaRaw;
-                if(elHora) elHora.textContent = '';
+                elCantEx.textContent = '---'; // Si está vacío en Excel, muestra guiones
             }
         }
 
-        // 5. DETALLE DE ASIGNACIÓN (Bloque Azul Inferior)
-        // Cantidad Exacta (Columna R): Buscamos variantes
-        const valorExacto = p['CANTIDAD EXACTA'] || p.cantidad_exacta || p.cantidadexacta || p['CANTIDAD_EXACTA'];
-        const elementoCantExacta = document.getElementById('det_cantidad_exacta_new');
-        
-        if (elementoCantExacta) {
-            if (valorExacto && String(valorExacto).trim() !== "" && valorExacto !== 0) {
-                elementoCantExacta.textContent = `${valorExacto} L`;
-                elementoCantExacta.className = "text-sm font-black text-slate-800";
-            } else {
-                elementoCantExacta.textContent = '---';
-                elementoCantExacta.className = "text-sm font-bold text-slate-400";
-            }
-        }
-        
-        // Datos que ya funcionan (ETA, Fletera, Unidad)
+        // 5. OTROS DATOS DE LOGÍSTICA
         document.getElementById('det_fletera_new').textContent = p.fletera || 'PENDIENTE';
-        document.getElementById('det_unidad_new').textContent = p.unidad ? `${p.unidad} ${p.placa1 || ''}` : 'SIN ASIGNAR';
+        document.getElementById('det_unidad_new').textContent = p.unidad || 'SIN ASIGNAR';
         document.getElementById('det_eta_new').textContent = p.eta || '--:--';
 
-        // 6. CONTROL DE VISIBILIDAD
-        const areaAsignacionNueva = document.getElementById('det_area_asignacion_nueva');
-        if (esGerente && !estaConfirmado) {
-            if (areaAsignacionNueva) areaAsignacionNueva.classList.add('hidden');
-        } else {
-            if (areaAsignacionNueva) areaAsignacionNueva.classList.remove('hidden');
+        // 6. VISIBILIDAD
+        const areaAsignacion = document.getElementById('det_area_asignacion_nueva');
+        if (areaAsignacion) {
+            (esGerente && !estaConfirmado) ? areaAsignacion.classList.add('hidden') : areaAsignacion.classList.remove('hidden');
         }
 
         // 7. BOTÓN CANCELAR
-        const areaBotonCancelacion = document.getElementById('area_cancelacion');
-        if (p.estatus === 'Pendiente') {
-            areaBotonCancelacion.classList.remove('hidden');
-            areaBotonCancelacion.querySelector('button').onclick = () => procesarCancelacion();
-        } else {
-            areaBotonCancelacion.classList.add('hidden');
+        const areaCancel = document.getElementById('area_cancelacion');
+        if(areaCancel) {
+            p.estatus === 'Pendiente' ? areaCancel.classList.remove('hidden') : areaCancel.classList.add('hidden');
+            areaCancel.querySelector('button').onclick = () => procesarCancelacion();
         }
 
     } catch (e) {
-        console.error("Error al cargar detalles:", e);
+        console.error("Error crítico:", e);
     }
 }
-
 
 function cerrarModalDetalles() {
     document.getElementById('modalDetallesPedido').classList.add('hidden');
