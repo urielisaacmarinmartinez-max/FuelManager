@@ -222,16 +222,20 @@ app.get('/api/obtener-pedido-detallado', async (req, res) => {
         if (p) {
             res.json({
                 id: p.get('FOLIO'),
+                fecha_registro: p.get('FECHA DE REGISTRO'), // <--- FALTABA ESTE (Columna B)
                 estacion: p.get('ESTACIÓN'),
                 estatus: p.get('ESTATUS'),
                 producto: p.get('TIPO DE PRODUCTO'),
                 litros: p.get('LITROS'),
+                prioridad: p.get('PRIORIDAD'), // <--- FALTABA ESTE
                 orden: p.get('ORDEN'),
                 fletera: p.get('FLETERA'),
                 unidad: p.get('UNIDAD'),
                 placa1: p.get('PLACAS 1'),
                 operador: p.get('OPERADOR'),
-                eta: p.get('ETA')
+                eta: p.get('ETA'),
+                cantidad_exacta: p.get('CANTIDAD EXACTA'), // <--- FALTABA ESTE (Columna R)
+                confirmacion_reubicacion: p.get('CONFIRMACIÓN REUBICACIÓN')
             });
         } else {
             res.status(404).json({ error: "Pedido no encontrado" });
