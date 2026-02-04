@@ -296,14 +296,13 @@
     }
 
     function configurarInterfazPorRol(rol) {
-    // 1. Si no es Fletera, nos aseguramos de que todo sea visible y salimos
     if (rol !== 'Fletera') {
         const todosLosBotones = document.querySelectorAll('nav button');
         todosLosBotones.forEach(btn => btn.style.display = 'flex');
         return; 
     }
 
-    // 2. Lógica para Fletera: Ocultar usando el texto exacto de tus botones
+    // Lógica para Fletera
     const botones = document.querySelectorAll('nav button');
     botones.forEach(btn => {
         const texto = btn.innerText.toLowerCase();
@@ -312,11 +311,10 @@
         }
     });
 
-    // 3. Insertar nuevos botones con FontAwesome (Igual que tus originales)
+
     const menuContainer = document.querySelector('nav');
     
     if (menuContainer && !document.getElementById('btn-operadores')) {
-        // Usamos exactamente tu clase de los botones "Mis Estaciones/Pedidos"
         const estiloClase = "w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left";
         
         const htmlNuevos = `
@@ -351,19 +349,17 @@ async function cargarPedidosDashboard() {
 
         const estacionesParam = encodeURIComponent(userData.estaciones);
         
-        // --- CAMBIO CLAVE AQUÍ: Agregamos &rol= al final de la URL ---
+        
         const response = await fetch(`/api/obtener-pedidos?estaciones=${estacionesParam}&rol=${userData.rol}`);
         const data = await response.json();
         
-        // 1. Actualizar Contadores Superiores
         const counters = document.querySelectorAll('h3.text-5xl');
         if(counters.length >= 2) {
-            // Usamos || 0 por seguridad si el servidor no devuelve datos
             counters[0].innerText = data.estadisticas.pendientes || 0; 
             counters[1].innerText = data.estadisticas.enRuta || 0;     
         }
 
-        // 2. Dibujar Tarjetas de Pedidos
+        // Dibujar Tarjetas de Pedidos
         const container = document.getElementById('pedidosContainer');
         
         if (!data.pedidos || data.pedidos.length === 0) {
@@ -372,7 +368,7 @@ async function cargarPedidosDashboard() {
         }
 
         container.innerHTML = data.pedidos.map(p => {
-            // Determinamos el color dinámico según estatus (Opcional, pero mejora lo visual)
+            // Color dinámico según estatus 
             const colorClass = p.estatus === 'Pendiente' ? 'bg-orange-50 text-orange-600' : 
                                p.estatus === 'En Ruta' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600';
 
@@ -407,7 +403,7 @@ async function cargarPedidosDashboard() {
         
         console.log("Datos procesados:", res);
 
-        // REPARACIÓN CLAVE: Definir userData localmente para evitar el ReferenceError
+        
         const userData = JSON.parse(localStorage.getItem('usuario'));
 
         if (Array.isArray(res)) {
@@ -420,12 +416,12 @@ async function cargarPedidosDashboard() {
 
         const select = document.getElementById('selEstacion');
         
-        // Ahora userData ya existe aquí y el if pasará sin errores
+        
         if (select && userData && userData.estaciones) {
             const misIds = userData.estaciones.split(',').map(s => s.trim());
             select.innerHTML = '<option value="">Seleccione Estación</option>';
             
-            // Filtramos las estaciones según los permisos del usuario
+            // Filtrar las estaciones según los permisos del usuario
             estacionesData.filter(est => misIds.includes(est.id)).forEach(est => {
                 const option = document.createElement('option');
                 option.value = est.id; 
@@ -434,7 +430,7 @@ async function cargarPedidosDashboard() {
             });
         }
         
-        // Dibujamos las tarjetas (que ya traen sus litros y capacidades correctas)
+        // Dibujamos las tarjetas
         dibujarEstaciones();
 
     } catch (e) {
@@ -479,7 +475,7 @@ async function cargarPedidosDashboard() {
    document.getElementById('orderForm').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnConfirm');
-    if (!btn) return; // Evita errores si el botón no se encuentra
+    if (!btn) return; 
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
@@ -489,8 +485,7 @@ async function cargarPedidosDashboard() {
         const idEstacion = document.getElementById('selEstacion').value;
         const est = estacionesData.find(e => (e.id || e.ID_Estacion) === idEstacion);
 
-        // --- SOLUCIÓN DEFINITIVA AL REFERENCE ERROR ---
-        // Definimos la variable con el nombre EXACTO que usaremos abajo
+        
         const fechaParaRegistro = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         const folioGenerado = "PED-" + Math.floor(100000 + Math.random() * 900000);
 
@@ -534,9 +529,8 @@ async function cargarPedidosDashboard() {
 };
 // ... (aquí terminan tus funciones de irDashboard o logout)
 
-// ==========================================
+
     // LÓGICA PARA EL MODAL DE TIRILLAS
-    // ==========================================
     function abrirModalTirilla(id, nombre) {
         console.log("Abriendo modal para:", id);
         const est = estacionesData.find(e => (e.id === id || e.ID_Estacion === id));
@@ -558,7 +552,7 @@ async function cargarPedidosDashboard() {
         document.getElementById('tirillaForm').reset();
     }
 
-    // ÚNICO CONTROLADOR PARA EL FORMULARIO DE TIRILLA (CORREGIDO)
+    // ÚNICO CONTROLADOR PARA EL FORMULARIO DE TIRILLA
     document.getElementById('tirillaForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
@@ -577,7 +571,7 @@ async function cargarPedidosDashboard() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
         try {
-            // Usamos mode: 'no-cors' para Google Apps Script
+            
             await fetch(URL_APPS_SCRIPT, {
                 method: 'POST',
                 mode: 'no-cors', 
@@ -585,8 +579,7 @@ async function cargarPedidosDashboard() {
                 body: JSON.stringify(datos)
             });
 
-            // Con 'no-cors' no podemos leer la respuesta JSON, 
-            // pero si llega aquí es porque la petición se envió.
+            
             alert('¡Inventario enviado correctamente!');
             cerrarModalTirilla();
             
@@ -605,9 +598,8 @@ async function cargarPedidosDashboard() {
         }
     };
 
-    // ==========================================
-    // NAVEGACIÓN Y VISTAS (NO TOCAR SI FUNCIONAN)
-    // ==========================================
+    // NAVEGACIÓN Y VISTAS
+   
     function togglePanel() {
         const p = document.getElementById('sidePanel');
         const o = document.getElementById('overlay');
@@ -822,8 +814,8 @@ async function verDetallePedido(id) {
         const response = await fetch(`/api/obtener-pedido-detallado?id=${id}`);
         const p = await response.json();
 
-        // 1. LÓGICA DE VISIBILIDAD DE ESTATUS (Punto 11)
-        // Si es Gerente y Logística NO ha confirmado/reubicado, forzamos "Pendiente"
+        // 1. LÓGICA DE VISIBILIDAD DE ESTATUS
+        // Si es Gerente y Logística NO ha confirmado/reubicado, "Pendiente"
         let estatusParaMostrar = p.estatus;
         let esGerente = userData.rol === 'Gerente Estación';
         let estaConfirmado = p.confirmacion_reubicacion && p.confirmacion_reubicacion.trim() !== "";
@@ -832,18 +824,18 @@ async function verDetallePedido(id) {
             estatusParaMostrar = "Pendiente";
         }
 
-        // 2. RELLENAR DATOS BÁSICOS
+        // RELLENAR DATOS BÁSICOS
         document.getElementById('det_estacion').textContent = p.estacion;
         document.getElementById('det_status').textContent = estatusParaMostrar;
         document.getElementById('det_producto').textContent = p.producto;
         document.getElementById('det_litros').textContent = `${p.litros} L`;
         
-        // Mostrar Folio (Punto 1)
+        // Mostrar Folio
         if(document.getElementById('det_folio')) {
             document.getElementById('det_folio').textContent = p.folio || 'S/F';
         }
 
-        // 3. LÓGICA DE ORDEN DE CARGA (Punto 12)
+        // LÓGICA DE ORDEN DE CARGA
         const areaLogistica = document.getElementById('area_logistica_exclusiva');
         if (esGerente) {
             areaLogistica.classList.add('hidden'); // Gerente nunca ve la Orden
@@ -872,11 +864,11 @@ async function verDetallePedido(id) {
             }
         }
 
-        // 5. LÓGICA DE CANCELACIÓN (Punto 23 y 24)
+        // 5. LÓGICA DE CANCELACIÓN
         if (p.estatus === 'Cancelado') {
             document.getElementById('det_status').classList.replace('bg-orange-100', 'bg-red-100');
             document.getElementById('det_status').classList.replace('text-orange-600', 'text-red-600');
-            // Podrías mostrar el motivo aquí si tienes el ID en el HTML
+            // Motivo aquí  "ID en el HTML"
             console.log("Cancelado por:", p.cancelacion_pedido, "Motivo:", p.motivo_cancelacion);
         }
 
@@ -891,25 +883,25 @@ function cerrarModalDetalles() {
 }
 
 async function procesarCancelacion() {
-    // 1. Obtener el ID del pedido que está abierto en el modal
-    // Usaremos el texto del folio o un atributo que guardaremos al abrir el modal
+    // Obtener el ID del pedido que está abierto en el modal
+    
     const folio = document.getElementById('det_folio')?.textContent;
     if (!folio || folio === 'S/F') {
         alert("No se pudo identificar el folio del pedido.");
         return;
     }
 
-    // 2. Pedir motivo (Punto 24 de tu lista)
+    // Pedir motivo
     const motivo = prompt("Indique el motivo de la cancelación (Obligatorio):");
     
-    if (motivo === null) return; // Si el usuario presiona "Cancelar" en el prompt
+    if (motivo === null) return; // Si el usuario presiona "Cancelar" 
     
     if (motivo.trim() === "") {
         alert("Debe ingresar un motivo para cancelar el pedido.");
         return;
     }
 
-    // 3. Obtener datos del usuario que cancela (Punto 23)
+    // Obtener datos del usuario que cancela
     const userData = JSON.parse(localStorage.getItem('usuario'));
     const autor = `${userData.nombre} (${userData.rol})`;
 

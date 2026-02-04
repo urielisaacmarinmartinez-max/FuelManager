@@ -103,14 +103,14 @@ app.get('/api/estaciones', async (req, res) => {
     }
 });
 
-// 3. GUARDAR PEDIDO (CORREGIDO PARA ZONA HORARIA MX)
+// 3. GUARDAR PEDIDO
 app.post('/api/pedidos', async (req, res) => {
     const pedido = req.body;
     try {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Pedidos']; 
         
-        // El servidor usa la fecha enviada por el celular o genera una de respaldo en formato MX
+       
         const fechaFinal = pedido.fecha_registro || new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
 
         await sheet.addRow({
@@ -183,7 +183,7 @@ app.get('/api/obtener-pedidos', async (req, res) => {
     }
 });
 
-// 5. ACTUALIZAR VOLUMEN (ZONA HORARIA MX)
+// 5. ACTUALIZAR VOLUMEN
 app.post('/api/actualizar-tirilla', async (req, res) => {
     const { id_estacion, volExtra, volSupreme, volDiesel } = req.body;
     try {
