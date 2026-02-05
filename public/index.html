@@ -327,6 +327,7 @@
     }
 
     function configurarInterfazPorRol(rol) {
+        document.body.setAttribute('data-user-role', rol);
     if (rol !== 'Fletera') {
         const todosLosBotones = document.querySelectorAll('nav button');
         todosLosBotones.forEach(btn => btn.style.display = 'flex');
