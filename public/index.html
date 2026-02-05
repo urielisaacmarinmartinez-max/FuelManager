@@ -747,13 +747,21 @@ function loadConfig() {
 
 async function renderizarPedidosLista(filtro = 'Todos') {
     const container = document.getElementById('listaPedidosCompleta');
+    if (!container) return;
+
     const userData = JSON.parse(localStorage.getItem('usuario'));
-    
-    // 1. Limpieza total y aviso de carga
-    container.innerHTML = '<div class="p-10 text-center text-slate-400 animate-pulse font-black uppercase text-xs tracking-widest">Generando Lista Logística...</div>';
+    if (!userData) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    container.innerHTML = '<div class="p-10 text-center text-slate-400">Cargando...</div>';
 
     try {
         const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}`);
+        
+        if (!response.ok) throw new Error("Error en servidor"); // <--- IMPORTANTE
+
         const data = await response.json();
         let pedidos = data.pedidos || [];
 
