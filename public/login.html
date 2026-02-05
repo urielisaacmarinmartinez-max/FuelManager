@@ -62,6 +62,78 @@
                 document.getElementById('errorMessage').classList.remove('hidden');
             }
         };
+
+        // --- LÓGICA DE CONTROL DE SELECCIÓN POR BLOQUES ---
+
+// 1. Escuchar cuando se marcan o desmarcan los checkboxes
+document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('pedido-checkbox')) {
+        const seleccionados = document.querySelectorAll('.pedido-checkbox:checked');
+        const barra = document.getElementById('barra-programacion');
+        const contador = document.getElementById('contador-seleccion');
+        
+        if (seleccionados.length > 0) {
+            // Mostrar la barra con animación
+            barra.classList.remove('hidden');
+            setTimeout(() => {
+                barra.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            contador.textContent = seleccionados.length;
+        } else {
+            // Ocultar la barra
+            barra.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => barra.classList.add('hidden'), 300);
+        }
+    }
+});
+
+// 2. Función para enviar el lote programado al servidor
+async function confirmarProgramacionBloque() {
+    const seleccionados = Array.from(document.querySelectorAll('.pedido-checkbox:checked')).map(cb => cb.value);
+    const fecha = document.getElementById('fecha-bloque').value;
+
+    if (!fecha) {
+        alert("⚠️ Por favor selecciona una fecha para el bloque de programación.");
+        return;
+    }
+
+    if (!confirm(`¿Confirmar programación de ${seleccionados.length} pedidos para el bloque del día ${fecha}?`)) return;
+
+    // Mostrar estado de carga en el botón
+    const btn = document.querySelector('#barra-programacion button');
+    const originalText = btn.innerText;
+    btn.innerText = "PROCESANDO...";
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/confirmar-bloque', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                idsPedidos: seleccionados, 
+                bloqueProgramacion: fecha 
+            })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+            alert("✅ ¡Bloque programado! Ahora el contador puede visualizar estos pedidos en la fecha seleccionada.");
+            // Recargamos la lista para que desaparezcan los checkboxes de lo ya programado
+            renderizarPedidosLista('Pendiente'); 
+            // Limpiar y ocultar barra
+            document.getElementById('barra-programacion').classList.add('hidden', 'translate-y-2', 'opacity-0');
+        } else {
+            alert("Error: " + res.message);
+        }
+    } catch (error) {
+        console.error("Error al confirmar bloque:", error);
+        alert("Ocurrió un error de conexión al procesar el bloque.");
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
     </script>
 </body>
 </html>
