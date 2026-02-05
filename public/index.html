@@ -408,41 +408,48 @@ async function cargarPedidosDashboard() {
     }
 }
 
-    function loadConfig() {
-    // 1. Validar que el selector de estación exista antes de pedir su valor
+function loadConfig() {
+    // 1. Verificamos que el selector exista. Si no está (ej. el usuario está en otra pestaña),
+    // la función se detiene aquí sin lanzar un error.
     const selEstacion = document.getElementById('selEstacion');
-    if (!selEstacion) return; // Salir silenciosamente si el elemento no está en el DOM
+    if (!selEstacion) return; 
 
     const id = selEstacion.value;
-    
-    // 2. Validar que estacionesData exista y no esté vacío
-    if (!window.estacionesData || !Array.isArray(estacionesData)) {
-        console.warn("estacionesData no está disponible todavía.");
+
+    // 2. Verificamos que 'estacionesData' sea un arreglo válido.
+    // Esto evita el error "estacionesData is not defined".
+    if (!window.estacionesData || !Array.isArray(window.estacionesData)) {
+        console.warn("Carga de configuración abortada: estacionesData no disponible.");
         return;
     }
 
     const est = estacionesData.find(e => (e.id || e.ID_Estacion) === id);
 
     if (est) {
-        // 3. Validar existencia antes de asignar valores
-        const dirInput = document.getElementById('dirAuto');
-        if (dirInput) {
-            dirInput.value = est.direccion || '';
+        // 3. Uso de validaciones individuales para cada elemento del DOM.
+        // Si quitas un elemento del HTML en el futuro, el código no se romperá.
+        const elDir = document.getElementById('dirAuto');
+        if (elDir) {
+            elDir.value = est.direccion || 'Sin dirección';
         }
 
-        const creditoHeader = document.getElementById('creditoHeader');
-        if (creditoHeader) {
-            const creditoFormateado = new Intl.NumberFormat('es-MX', { 
+        const elCredito = document.getElementById('creditoHeader');
+        if (elCredito) {
+            const formatoMoneda = new Intl.NumberFormat('es-MX', { 
                 style: 'currency', 
                 currency: 'MXN' 
             }).format(est.credito || 0);
             
-            creditoHeader.innerText = creditoFormateado;
+            elCredito.innerText = formatoMoneda;
         }
 
-        // 4. Asegurarse de que calcTotal exista antes de llamarla
+        // 4. Solo ejecutamos calcTotal si la función existe.
         if (typeof calcTotal === 'function') {
-            calcTotal();
+            try {
+                calcTotal();
+            } catch (error) {
+                console.error("Error al calcular total:", error);
+            }
         }
     }
 }
