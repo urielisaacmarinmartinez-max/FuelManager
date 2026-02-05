@@ -807,7 +807,7 @@ async function cargarPedidosDashboard() {
 
             // --- LÓGICA DEL CHECKBOX PARA LOGÍSTICA ---
             // Solo aparece si el rol es Logística y el pedido está Pendiente
-            const esLogistica = userData.rol === 'Logística' || userData.rol === 'Admin'; 
+            const esLogistica = true;
             const mostrarCheckbox = esLogistica && p.estatus === 'Pendiente';
 
             return `
