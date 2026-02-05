@@ -298,5 +298,38 @@ app.post('/api/reubicar-pedido', async (req, res) => {
     }
 });
 
+// --- ENDPOINT PARA PROGRAMACIÓN POR BLOQUES (LOGÍSTICA) ---
+app.post('/api/confirmar-bloque', async (req, res) => {
+    const { idsPedidos, bloqueProgramacion } = req.body;
+    
+    try {
+        await doc.loadInfo();
+        const sheet = doc.sheetsByTitle['Pedidos'];
+        const rows = await sheet.getRows();
+
+        let procesados = 0;
+
+        for (let id of idsPedidos) {
+            const row = rows.find(r => r.get('FOLIO') === id);
+            if (row) {
+                // Actualizamos las columnas según tu nueva estructura
+                row.set('BLOQUE DE PROGRAMACIÓN', bloqueProgramacion);
+                row.set('ESTATUS', 'Aceptado'); // Al programarlo, pasa a ser un pedido "Aceptado"
+                await row.save();
+                procesados++;
+            }
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Se programaron ${procesados} pedidos para el bloque ${bloqueProgramacion}` 
+        });
+
+    } catch (error) {
+        console.error("Error en bloque:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Servidor activo en puerto ${PORT}`));
