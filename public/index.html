@@ -456,42 +456,55 @@ async function cargarPedidosDashboard() {
 
   async function cargarEstaciones() {
     try {
-        console.log("Solicitando datos de estaciones al servidor...");
+        console.log("--- Iniciando Carga de Estaciones ---");
         const response = await fetch('/api/estaciones');
         const res = await response.json();
         
-        console.log("Datos recibidos:", res);
-
         const userData = JSON.parse(localStorage.getItem('usuario'));
         if (!userData) return;
 
-        // 1. Procesamiento de los datos según la estructura que devuelva tu API
+        // 1. Normalización de datos recibidos del servidor
+        let todasLasEstaciones = [];
         if (Array.isArray(res)) {
-            estacionesData = res;
-            estacionesBase = res; 
+            todasLasEstaciones = res;
         } else if (res && res.datos) {
-            // Ajuste según tu estructura de Google Sheets
-            estacionesData = res.datos.TIRILLAS || []; 
-            estacionesBase = res.datos.Estaciones || []; 
+            // Estructura común cuando viene de Google Sheets
+            todasLasEstaciones = res.datos.Estaciones || res.datos.TIRILLAS || [];
         }
 
-        // 2. Lógica de Filtrado Inteligente
-        // Limpiamos los IDs del usuario (maneja espacios y comas)
-        const misIds = userData.estaciones ? userData.estaciones.split(',').map(s => s.trim()) : [];
+        // 2. Lógica de "Superusuario" para Admin Policon
+        // Limpiamos los IDs del usuario y los pasamos a mayúsculas para evitar errores de dedo
+        const misIds = userData.estaciones ? userData.estaciones.split(',').map(s => s.trim().toUpperCase()) : [];
         
-        // Verificamos si es Admin (por palabra clave "TODAS" o por Rol)
+        // El Admin es admin si su rol es Logistica o si sus estaciones asignadas dicen "TODAS"
         const esAdmin = misIds.includes('TODAS') || userData.rol === 'Logistica_Policon';
 
-        // Filtramos: Si es Admin ve todo, si no, solo lo que coincida con sus IDs
-        const estacionesVisibles = esAdmin 
-            ? estacionesData 
-            : estacionesData.filter(est => misIds.includes(est.id));
+        console.log("Usuario:", userData.nombre, "| ¿Es Admin?:", esAdmin);
 
-        // 3. Llenado del Selector (Dropdown)
+        // 3. Filtrado Crucial
+        let estacionesVisibles = [];
+        if (esAdmin) {
+            console.log("Acceso total concedido. Cargando " + todasLasEstaciones.length + " estaciones.");
+            estacionesVisibles = todasLasEstaciones;
+        } else {
+            // Filtro para Gerentes: el id de la estación debe estar en la lista del usuario
+            estacionesVisibles = todasLasEstaciones.filter(est => {
+                // Buscamos coincidencia en id o nombre (por si acaso)
+                return misIds.includes(est.id?.toString().toUpperCase()) || 
+                       misIds.includes(est.nombre?.toString().toUpperCase());
+            });
+            console.log("Acceso limitado. Estaciones encontradas:", estacionesVisibles.length);
+        }
+
+        // 4. Actualización de Variables Globales (ESTO ES LO QUE DIBUJA LAS TARJETAS)
+        // Sobreescribimos las variables que usa 'dibujarEstaciones()'
+        estacionesData = estacionesVisibles;
+        estacionesBase = todasLasEstaciones; 
+
+        // 5. Llenado del Selector (Dropdown de Nuevo Pedido)
         const select = document.getElementById('selEstacion');
         if (select) {
             select.innerHTML = '<option value="">Seleccione Estación</option>';
-            
             estacionesVisibles.forEach(est => {
                 const option = document.createElement('option');
                 option.value = est.id; 
@@ -499,20 +512,27 @@ async function cargarPedidosDashboard() {
                 select.appendChild(option);
             });
         }
-        
-        // 4. Actualizamos la variable global con los datos filtrados 
-        // para que la función 'dibujarEstaciones' use estos mismos datos
-        estacionesData = estacionesVisibles;
 
-        // 5. Dibujamos las tarjetas en la interfaz
-        if (typeof dibujarEstaciones === "function") {
-            dibujarEstaciones();
+        // 6. Ejecución del Renderizado
+        if (estacionesVisibles.length > 0) {
+            if (typeof dibujarEstaciones === "function") {
+                dibujarEstaciones();
+            } else {
+                console.error("Error: La función 'dibujarEstaciones' no existe.");
+            }
         } else {
-            console.warn("La función 'dibujarEstaciones' no está definida.");
+            // Si llegamos aquí, es que el filtro no dejó pasar nada
+            const container = document.querySelector('.grid') || document.getElementById('estacionesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center p-10">
+                        <p class="text-slate-400 font-bold">No se encontraron estaciones asignadas para: ${userData.estaciones}</p>
+                    </div>`;
+            }
         }
 
     } catch (e) {
-        console.error("Error crítico cargando estaciones:", e);
+        console.error("Error crítico en cargarEstaciones:", e);
     }
 }
     function loadConfig() {
