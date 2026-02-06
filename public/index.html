@@ -454,34 +454,45 @@ async function cargarPedidosDashboard() {
     }
 }
 
-   async function cargarEstaciones() {
+  async function cargarEstaciones() {
     try {
-        console.log("Solicitando datos al servidor...");
+        console.log("Solicitando datos de estaciones al servidor...");
         const response = await fetch('/api/estaciones');
         const res = await response.json();
         
-        console.log("Datos procesados:", res);
+        console.log("Datos recibidos:", res);
 
-        
         const userData = JSON.parse(localStorage.getItem('usuario'));
+        if (!userData) return;
 
+        // 1. Procesamiento de los datos según la estructura que devuelva tu API
         if (Array.isArray(res)) {
             estacionesData = res;
             estacionesBase = res; 
         } else if (res && res.datos) {
+            // Ajuste según tu estructura de Google Sheets
             estacionesData = res.datos.TIRILLAS || []; 
             estacionesBase = res.datos.Estaciones || []; 
         }
 
+        // 2. Lógica de Filtrado Inteligente
+        // Limpiamos los IDs del usuario (maneja espacios y comas)
+        const misIds = userData.estaciones ? userData.estaciones.split(',').map(s => s.trim()) : [];
+        
+        // Verificamos si es Admin (por palabra clave "TODAS" o por Rol)
+        const esAdmin = misIds.includes('TODAS') || userData.rol === 'Logistica_Policon';
+
+        // Filtramos: Si es Admin ve todo, si no, solo lo que coincida con sus IDs
+        const estacionesVisibles = esAdmin 
+            ? estacionesData 
+            : estacionesData.filter(est => misIds.includes(est.id));
+
+        // 3. Llenado del Selector (Dropdown)
         const select = document.getElementById('selEstacion');
-        
-        
-        if (select && userData && userData.estaciones) {
-            const misIds = userData.estaciones.split(',').map(s => s.trim());
+        if (select) {
             select.innerHTML = '<option value="">Seleccione Estación</option>';
             
-            // Filtrar las estaciones según los permisos del usuario
-            estacionesData.filter(est => misIds.includes(est.id)).forEach(est => {
+            estacionesVisibles.forEach(est => {
                 const option = document.createElement('option');
                 option.value = est.id; 
                 option.textContent = est.nombre;
@@ -489,14 +500,21 @@ async function cargarPedidosDashboard() {
             });
         }
         
-        // Dibujamos las tarjetas
-        dibujarEstaciones();
+        // 4. Actualizamos la variable global con los datos filtrados 
+        // para que la función 'dibujarEstaciones' use estos mismos datos
+        estacionesData = estacionesVisibles;
+
+        // 5. Dibujamos las tarjetas en la interfaz
+        if (typeof dibujarEstaciones === "function") {
+            dibujarEstaciones();
+        } else {
+            console.warn("La función 'dibujarEstaciones' no está definida.");
+        }
 
     } catch (e) {
-        console.error("Error cargando estaciones:", e);
+        console.error("Error crítico cargando estaciones:", e);
     }
 }
-
     function loadConfig() {
         const id = document.getElementById('selEstacion').value;
         const est = estacionesData.find(e => (e.id || e.ID_Estacion) === id);
