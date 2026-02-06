@@ -380,44 +380,55 @@ body:not([data-user-role="Logística"]):not([data-user-role="Admin"]) .w-10.flex
 
 
     async function sincronizar() {
-        const icon = document.getElementById('syncIcon');
-        icon.classList.add('spin-anim'); 
-        
+    const icon = document.getElementById('syncIcon');
+    if (icon) icon.classList.add('spin-anim'); 
+    
+    try {
         await cargarEstaciones();
-        await cargarPedidosDashboard(); // <--- Sincroniza también los pedidos
+        await cargarPedidosDashboard();
         
-        loadConfig(); 
-        setTimeout(() => icon.classList.remove('spin-anim'), 1000);
+        // Solo ejecuta loadConfig si existe la función y no rompe el flujo
+        if (typeof loadConfig === "function") {
+            try { loadConfig(); } catch(e) { console.warn("Aviso: loadConfig saltado"); }
+        }
+    } catch (error) {
+        console.error("Error en sincronización:", error);
+    } finally {
+        if (icon) setTimeout(() => icon.classList.remove('spin-anim'), 1000);
     }
+}
 
     // NUEVA FUNCIÓN: Dibuja los pedidos y actualiza contadores
 async function cargarPedidosDashboard() {
     try {
         const userData = JSON.parse(localStorage.getItem('usuario'));
-        if (!userData) return; // Seguridad por si no hay sesión
+        if (!userData) return;
 
-        const estacionesParam = encodeURIComponent(userData.estaciones);
-        
-        
-        const response = await fetch(`/api/obtener-pedidos?estaciones=${estacionesParam}&rol=${userData.rol}`);
+        // Aseguramos que estaciones no sea null o undefined
+        const est = userData.estaciones || "";
+        const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(est)}&rol=${userData.rol}`);
         const data = await response.json();
         
-        const counters = document.querySelectorAll('h3.text-5xl');
-        if(counters.length >= 2) {
-            counters[0].innerText = data.estadisticas.pendientes || 0; 
-            counters[1].innerText = data.estadisticas.enRuta || 0;     
+        // Actualizar contadores con seguridad
+        const cPendientes = document.getElementById('countPendientes');
+        const cEnRuta = document.getElementById('countEnRuta');
+        const cEntregados = document.getElementById('countEntregados');
+
+        if (data.estadisticas) {
+            if (cPendientes) cPendientes.innerText = data.estadisticas.pendientes || 0;
+            if (cEnRuta) cEnRuta.innerText = data.estadisticas.enRuta || 0;
+            if (cEntregados) cEntregados.innerText = data.estadisticas.entregados || 0;
         }
 
-        // Dibujar Tarjetas de Pedidos
         const container = document.getElementById('pedidosContainer');
-        
+        if (!container) return;
+
         if (!data.pedidos || data.pedidos.length === 0) {
-            container.innerHTML = '<p class="text-slate-400 italic">No hay pedidos recientes para mostrar.</p>';
+            container.innerHTML = '<p class="text-slate-400 italic p-4">No hay pedidos recientes.</p>';
             return;
         }
 
         container.innerHTML = data.pedidos.map(p => {
-            // Color dinámico según estatus 
             const colorClass = p.estatus === 'Pendiente' ? 'bg-orange-50 text-orange-600' : 
                                p.estatus === 'En Ruta' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600';
 
@@ -425,22 +436,21 @@ async function cargarPedidosDashboard() {
                 <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 transition-all hover:scale-[1.02]">
                     <div class="flex justify-between items-start mb-4">
                         <span class="px-3 py-1 ${colorClass} text-[10px] font-black rounded-full uppercase tracking-wider">
-                            ${p.estatus}
+                            ${p.estatus || 'Pendiente'}
                         </span>
                         <p class="text-[10px] text-slate-400 font-bold">${p.fecha ? p.fecha.split(',')[0] : 'Reciente'}</p>
                     </div>
-                    <h4 class="font-black text-slate-900 mb-1 truncate">${p.estacion}</h4>
-                    <p class="text-xs text-slate-500 font-bold mb-4 uppercase tracking-tighter">${p.producto} — ${p.litros} L</p>
+                    <h4 class="font-black text-slate-900 mb-1 truncate">${p.estacion || 'S/N'}</h4>
+                    <p class="text-xs text-slate-500 font-bold mb-4 uppercase tracking-tighter">${p.producto || 'Combustible'} — ${p.litros || 0} L</p>
                     <div class="flex justify-between items-center pt-4 border-t border-slate-50">
-                        <p class="text-[10px] font-black text-slate-400 uppercase">Total Cobrado</p>
-                        <p class="font-black text-slate-900">${p.total}</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase">Total</p>
+                        <p class="font-black text-slate-900">${p.total || '$0.00'}</p>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
 
     } catch (e) {
-        console.error("Error al cargar pedidos en dashboard:", e);
+        console.error("Error crítico en Dashboard:", e);
     }
 }
 
