@@ -908,35 +908,46 @@ function setFechaManana() {
 async function renderizarPedidosLista(filtro = 'Todos') {
     const container = document.getElementById('listaPedidosCompleta');
     const userData = JSON.parse(localStorage.getItem('usuario'));
-    
-    // 1. Limpieza total y aviso de carga
+    if (!userData) return;
+
+    // --- BLOQUE DE CONTROL DE VISIBILIDAD (Solo Admin/Logística) ---
+    const controlProgramacion = document.getElementById('control-programacion');
+    const esLogistica = userData.rol === 'Logistica_Policon' || userData.rol === 'Admin';
+
+    if (controlProgramacion) {
+        // Solo el Admin ve el selector de fechas, el Gerente no
+        controlProgramacion.style.display = esLogistica ? 'block' : 'none';
+    }
+
+    // 1. Capturar la fecha del input (si existe)
+    const inputFecha = document.getElementById('fechaFiltroPedidos');
+    const fechaSeleccionada = inputFecha ? inputFecha.value : '';
+
+    // 2. Limpieza total y aviso de carga
     container.innerHTML = '<div class="p-10 text-center text-slate-400 animate-pulse font-black uppercase text-xs tracking-widest">Generando Lista Logística...</div>';
 
     try {
-        const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}`);
+        // AGREGAMOS fechaEntrega al FETCH para que el servidor sepa qué día buscar
+        const url = `/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}&fechaEntrega=${fechaSeleccionada}`;
+        const response = await fetch(url);
         const data = await response.json();
         let pedidos = data.pedidos || [];
 
+        // Filtro por estatus (Botones de Pendiente, En Ruta, etc)
         if (filtro !== 'Todos') {
             pedidos = pedidos.filter(p => p.estatus.toLowerCase() === filtro.toLowerCase());
         }
 
         if (pedidos.length === 0) {
-            container.innerHTML = `<p class="p-10 text-center font-bold text-slate-400">No hay pedidos "${filtro}"</p>`;
+            container.innerHTML = `<p class="p-10 text-center font-bold text-slate-400">No hay pedidos registrados para el día seleccionado.</p>`;
             return;
         }
-
-        // --- VALIDACIÓN DE ROL ---
-        // Forzamos 'true' momentáneamente para que VEAS el cambio. 
-        // Luego lo regresamos a: userData.rol === 'Logística' || userData.rol === 'Admin'
-        const esLogistica = true; 
 
         container.innerHTML = pedidos.map(p => {
             const color = p.estatus === 'Pendiente' ? 'orange' : 
                           p.estatus === 'En Ruta' ? 'purple' : 
                           p.estatus === 'Entregado' ? 'emerald' : 'blue';
 
-            // DISEÑO TIPO FILA DE TABLA (Como el software de logística que enviaste)
             return `
             <div class="group bg-white hover:bg-slate-50 border-b border-slate-100 flex items-center py-3 px-4 transition-all first:rounded-t-3xl last:rounded-b-3xl">
                 
@@ -981,7 +992,7 @@ async function renderizarPedidosLista(filtro = 'Todos') {
 
     } catch (e) {
         console.error("Error:", e);
-        container.innerHTML = '<p class="text-red-500 text-center font-bold">Error de conexión.</p>';
+        container.innerHTML = '<p class="text-red-500 text-center font-bold">Error de conexión al servidor.</p>';
     }
 }
 
