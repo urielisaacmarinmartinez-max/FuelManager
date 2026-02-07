@@ -826,56 +826,61 @@ function dibujarEstaciones() {
     }
 
 // Funciones de apoyo para el tiempo
+// --- CORRECCIÓN DE FUNCIONES DE APOYO ---
 function setFechaHoy() {
     const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaFiltroPedidos').value = hoy;
-    cargarPedidosDashboard();
+    const input = document.getElementById('fechaFiltroPedidos');
+    if (input) {
+        input.value = hoy;
+        // Cambiamos cargarPedidosDashboard por renderizarPedidosLista para que actualice la tabla
+        renderizarPedidosLista(); 
+    }
 }
 
 function setFechaManana() {
     const manana = new Date();
     manana.setDate(manana.getDate() + 1);
     const fechaStr = manana.toISOString().split('T')[0];
-    document.getElementById('fechaFiltroPedidos').value = fechaStr;
-    cargarPedidosDashboard();
+    const input = document.getElementById('fechaFiltroPedidos');
+    if (input) {
+        input.value = fechaStr;
+        // Cambiamos cargarPedidosDashboard por renderizarPedidosLista
+        renderizarPedidosLista();
+    }
 }
 
-
+// --- RENDERIZADO CON ACTIVACIÓN DE CHECKBOXES ---
 async function renderizarPedidosLista(filtro = 'Todos') {
     const container = document.getElementById('listaPedidosCompleta');
     const userData = JSON.parse(localStorage.getItem('usuario'));
-    if (!userData) return;
+    if (!userData || !container) return;
 
-    // --- BLOQUE DE CONTROL DE VISIBILIDAD (Solo Admin/Logística) ---
     const controlProgramacion = document.getElementById('control-programacion');
     const esLogistica = userData.rol === 'Logistica_Policon' || userData.rol === 'Admin';
 
     if (controlProgramacion) {
-        // Solo el Admin ve el selector de fechas, el Gerente no
         controlProgramacion.style.display = esLogistica ? 'block' : 'none';
     }
 
-    // 1. Capturar la fecha del input (si existe)
     const inputFecha = document.getElementById('fechaFiltroPedidos');
     const fechaSeleccionada = inputFecha ? inputFecha.value : '';
 
-    // 2. Limpieza total y aviso de carga
     container.innerHTML = '<div class="p-10 text-center text-slate-400 animate-pulse font-black uppercase text-xs tracking-widest">Generando Lista Logística...</div>';
 
     try {
-        // AGREGAMOS fechaEntrega al FETCH para que el servidor sepa qué día buscar
         const url = `/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}&fechaEntrega=${fechaSeleccionada}`;
         const response = await fetch(url);
         const data = await response.json();
         let pedidos = data.pedidos || [];
 
-        // Filtro por estatus (Botones de Pendiente, En Ruta, etc)
         if (filtro !== 'Todos') {
             pedidos = pedidos.filter(p => p.estatus.toLowerCase() === filtro.toLowerCase());
         }
 
         if (pedidos.length === 0) {
             container.innerHTML = `<p class="p-10 text-center font-bold text-slate-400">No hay pedidos registrados para el día seleccionado.</p>`;
+            // Ocultamos el panel si no hay pedidos
+            actualizarSeleccionados();
             return;
         }
 
@@ -889,22 +894,20 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                 
                 <div class="w-10 flex justify-center">
                     ${p.estatus === 'Pendiente' ? 
-                        `<input type="checkbox" value="${p.id}" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
+                        // CORRECCIÓN: Se agregó onchange="actualizarSeleccionados()"
+                        `<input type="checkbox" value="${p.id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
                         : `<i class="fas fa-check text-emerald-400 text-xs"></i>`}
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 flex-1 items-center gap-4 ml-4">
-                    
                     <div class="flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estación</span>
                         <span class="font-bold text-slate-800 text-sm truncate uppercase">${p.estacion}</span>
                     </div>
-
                     <div class="flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Producto / Litros</span>
-                        <span class="font-bold text-slate-600 text-xs uppercase">${p.producto} <span class="text-blue-500">— ${p.litros}L</span></span>
+                        <span class="font-bold text-slate-600 text-xs uppercase">${p.producto} <span class="text-blue-500">— ${Number(p.litros).toLocaleString()}L</span></span>
                     </div>
-
                     <div class="hidden md:flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estatus</span>
                         <div>
@@ -913,7 +916,6 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                             </span>
                         </div>
                     </div>
-
                     <div class="hidden md:flex flex-col items-end mr-6">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-right">Monto</span>
                         <span class="font-black text-slate-900 text-sm">${p.total}</span>
@@ -925,28 +927,31 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                 </button>
             </div>`;
         }).join('');
+        
+        // Sincronizar el estado de la barra al terminar de renderizar
+        actualizarSeleccionados();
 
     } catch (e) {
         console.error("Error:", e);
-        container.innerHTML = '<p class="text-red-500 text-center font-bold">Error de conexión al servidor.</p>';
+        container.innerHTML = '<p class="text-red-500 text-center font-bold p-10">Error de conexión al servidor.</p>';
     }
 }
 
-let fechaSeleccionadaParaAsignar = "";
-
-/**
- * Muestra el panel flotante cuando hay pedidos marcados
- */
+// --- LAS FUNCIONES DE SELECCIÓN Y PICKER SE MANTIENEN IGUAL PERO ASEGURAMOS QUE RECONOZCAN EL PANEL ---
 function actualizarSeleccionados() {
-    const seleccionados = document.querySelectorAll('.pedido-checkbox:checked');
+    const checkboxes = document.querySelectorAll('.pedido-checkbox:checked');
     const panel = document.getElementById('panel-programacion-flotante');
     const badge = document.getElementById('contador-masivo-badge');
     
-    if (seleccionados.length > 0) {
+    if (!panel || !badge) return;
+
+    if (checkboxes.length > 0) {
+        badge.innerText = checkboxes.length;
         panel.classList.remove('hidden');
-        badge.innerText = seleccionados.length;
+        panel.style.display = 'flex'; // Forzamos visibilidad
     } else {
         panel.classList.add('hidden');
+        panel.style.display = 'none';
     }
 }
 
