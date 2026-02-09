@@ -33,17 +33,25 @@ body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-
         .spin-anim { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Para controlar la visibilidad de checkboxes desde el botón Admin */
-.pedido-checkbox-container {
-    transition: all 0.3s ease;
+/* Asegura que el título sea exacto a tu boceto (Sin cursivas) */
+.titulo-seccion {
+    font-style: normal !important;
+    text-transform: none !important;
 }
-.pedido-checkbox-container.hidden {
+
+/* Ocultar casillas por defecto para todos */
+.pedido-checkbox-container {
     display: none !important;
 }
 
-/* Estilo para que la X del modal resalte */
-#modalAsignacionFecha i.fa-times-circle {
-    font-size: 1.5rem;
+/* Solo mostrarlas cuando se activa el modo selección */
+body.modo-seleccion-activo .pedido-checkbox-container {
+    display: block !important;
+}
+
+/* Evitar cambios para el Gerente: respetamos su menú original */
+body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .admin-only {
+    display: none !important;
 }
 
     </style>
@@ -160,42 +168,42 @@ body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-
         </div>
 
         <div id="pedidosView" class="hidden">
-            <header class="flex justify-between items-center mb-10">
-                <div>
-                    <h1 class="text-4xl font-black tracking-tight text-slate-900 uppercase italic">Pedidos</h1>
-                    <p class="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Gestión Logística Central</p>
-                </div>
-                
-                <div class="bg-white px-6 py-3 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="text-right">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">Programación<br>por Día</p>
-                    </div>
-                    <div class="h-8 w-[1px] bg-slate-100 mx-1"></div>
-                    <input type="date" id="fechaFiltroPedidos" 
-                           class="bg-transparent border-none font-black text-slate-700 outline-none text-sm"
-                           onchange="cargarPedidosDashboard()">
-                </div>
-            </header>
-
-            <div class="mb-8">
-                <button id="btnModoSeleccion" onclick="toggleModoSeleccion()" 
-                        class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-xl hover:bg-blue-600 transition-all flex items-center gap-3">
-                    <i class="fas fa-list-check"></i> Seleccionar Pedidos
-                </button>
+    <header class="flex justify-between items-center mb-10">
+        <div>
+            <h1 id="txtTituloPedidos" class="text-4xl font-black tracking-tight text-slate-900">Pedidos</h1>
+            <p id="txtSubtituloPedidos" class="text-slate-500 font-medium mt-1">Historial y seguimiento en tiempo real</p>
+        </div>
+        
+        <div id="area-programacion-header" class="bg-white px-6 py-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-4 admin-only">
+            <div class="text-right">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">Programación<br>por Día</p>
             </div>
-
-            <div class="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
-                <button onclick="filtrarPedidos('Todos')" class="filter-btn active bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-xs uppercase">Todos</button>
-                <button onclick="filtrarPedidos('Pendiente')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-orange-50 hover:text-orange-500">Pendientes</button>
-                <button onclick="filtrarPedidos('Aceptado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-50 hover:text-blue-500">Aceptados</button>
-                <button onclick="filtrarPedidos('En Ruta')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-purple-50 hover:text-purple-500">En Ruta</button>
-                <button onclick="filtrarPedidos('Entregado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-emerald-50 hover:text-emerald-500">Entregados</button>
-            </div>
-
-            <div id="listaPedidosCompleta" class="space-y-3">
-                <p class="text-slate-400 italic">Cargando pedidos...</p>
+            <div class="h-8 w-[1px] bg-slate-100 mx-1"></div>
+            <div class="flex items-center gap-2">
+                <input type="date" id="fechaFiltroPedidos" class="bg-transparent border-none font-black text-slate-700 outline-none text-sm" onchange="cargarPedidosDashboard()">
+                <button onclick="setFechaHoy()" class="px-3 py-1 bg-slate-50 rounded-lg text-[9px] font-bold text-slate-600 hover:bg-slate-900 hover:text-white transition-all">HOY</button>
             </div>
         </div>
+    </header>
+
+    <div class="mb-8 admin-only">
+        <button id="btnModoSeleccion" onclick="toggleModoSeleccion()" 
+                class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all">
+            Seleccionar Pedidos
+        </button>
+    </div>
+
+    <div class="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+        <button onclick="filtrarPedidos('Todos')" class="filter-btn active bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-xs uppercase">Todos</button>
+        <button onclick="filtrarPedidos('Pendiente')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-orange-50">Pendientes</button>
+        <button onclick="filtrarPedidos('Aceptado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-50">Aceptados</button>
+        <button onclick="filtrarPedidos('En Ruta')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-purple-50">En Ruta</button>
+        <button onclick="filtrarPedidos('Entregado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-emerald-50">Entregados</button>
+    </div>
+
+    <div id="listaPedidosCompleta" class="grid grid-cols-1 gap-4">
+        </div>
+</div>
 
         <div id="modalTirilla" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
             <div class="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl relative">
@@ -303,6 +311,27 @@ body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-
         // ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
         setInterval(sincronizar, 30000);
     }
+
+function ajustarTextosPorRol(rol) {
+    // Detectamos si es Admin o Logística
+    const esAdmin = (rol === 'Logistica_Policon' || rol === 'Admin');
+    
+    // 1. Cambiar Título y Subtítulo
+    const titulo = document.getElementById('txtTituloPedidos');
+    const subtitulo = document.getElementById('txtSubtituloPedidos');
+    
+    if (titulo && subtitulo) {
+        titulo.innerText = esAdmin ? "Pedidos" : "Mis Pedidos";
+        subtitulo.innerText = esAdmin ? "Gestión Logística Central" : "Historial y seguimiento en tiempo real";
+    }
+
+    // 2. Mostrar/Ocultar herramientas de Admin (Botón selección y Programación header)
+    // Para esto, asegúrate de que los elementos tengan la clase 'admin-only'
+    const herramientasAdmin = document.querySelectorAll('.admin-only');
+    herramientasAdmin.forEach(el => {
+        el.style.setProperty('display', esAdmin ? 'flex' : 'none', esAdmin ? '' : 'important');
+    });
+}
 
     function configurarInterfazPorRol(rol) {
         document.body.setAttribute('data-user-role', rol);
@@ -1176,17 +1205,17 @@ let modoSeleccionActivo = false;
 function toggleModoSeleccion() {
     modoSeleccionActivo = !modoSeleccionActivo;
     const btn = document.getElementById('btnModoSeleccion');
-    const containers = document.querySelectorAll('.pedido-checkbox-container');
     
     if (modoSeleccionActivo) {
-        btn.innerHTML = '<i class="fas fa-times mr-2"></i> Cancelar Selección';
-        btn.classList.replace('bg-slate-900', 'bg-slate-500');
-        containers.forEach(el => el.classList.remove('hidden'));
+        document.body.classList.add('modo-seleccion-activo');
+        btn.innerHTML = 'Cancelar Selección';
+        btn.classList.replace('bg-blue-600', 'bg-slate-500');
     } else {
-        btn.innerHTML = '<i class="fas fa-list-check mr-2"></i> Seleccionar Pedidos';
-        btn.classList.replace('bg-slate-500', 'bg-slate-900');
-        containers.forEach(el => el.classList.add('hidden'));
-        // Limpiar selección al cancelar
+        document.body.classList.remove('modo-seleccion-activo');
+        btn.innerHTML = 'Seleccionar Pedidos';
+        btn.classList.replace('bg-slate-500', 'bg-blue-600');
+        
+        // Limpiar checkboxes
         document.querySelectorAll('.pedido-checkbox').forEach(cb => cb.checked = false);
         actualizarSeleccionados(); 
     }
