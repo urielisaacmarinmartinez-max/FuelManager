@@ -978,23 +978,25 @@ async function renderizarPedidosLista(filtro = 'Todos') {
 
         if (pedidos.length === 0) {
             container.innerHTML = `<p class="p-10 text-center font-bold text-slate-400">No hay pedidos registrados para el día seleccionado.</p>`;
-            actualizarSeleccionados(); 
+            actualizarSeleccionados(); // Oculta la barra si no hay nada
             return;
         }
 
         container.innerHTML = pedidos.map(p => {
+            // Normalizamos el estatus para la comparación
             const estatusNormalizado = p.estatus ? p.estatus.trim().toLowerCase() : '';
             
             const color = estatusNormalizado === 'pendiente' ? 'orange' : 
                           estatusNormalizado === 'en ruta' ? 'purple' : 
                           estatusNormalizado === 'entregado' ? 'emerald' : 'blue';
 
+            // AQUÍ ESTÁ EL CAMBIO: Aceptamos tanto 'pendiente' como 'aceptado' para programar
             const permiteSeleccion = estatusNormalizado === 'pendiente' || estatusNormalizado === 'aceptado';
 
             return `
             <div class="group bg-white hover:bg-slate-50 border-b border-slate-100 flex items-center py-3 px-4 transition-all first:rounded-t-3xl last:rounded-b-3xl">
                 
-                <div class="pedido-checkbox-container w-10 flex justify-center">
+                <div class="w-10 flex justify-center">
                     ${permiteSeleccion ? 
                         `<input type="checkbox" value="${p.id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
                         : `<i class="fas fa-check text-emerald-400 text-xs"></i>`}
@@ -1029,11 +1031,6 @@ async function renderizarPedidosLista(filtro = 'Todos') {
             </div>`;
         }).join('');
         
-        // --- 2. IMPORTANTE: Mantenemos la visibilidad si el modo selección ya estaba activo ---
-        if (typeof modoSeleccionActivo !== 'undefined' && modoSeleccionActivo) {
-            document.body.classList.add('modo-seleccion-activo');
-        }
-
         actualizarSeleccionados();
 
     } catch (e) {
