@@ -32,6 +32,20 @@ body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-
         /* Animación para el icono de carga */
         .spin-anim { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Para controlar la visibilidad de checkboxes desde el botón Admin */
+.pedido-checkbox-container {
+    transition: all 0.3s ease;
+}
+.pedido-checkbox-container.hidden {
+    display: none !important;
+}
+
+/* Estilo para que la X del modal resalte */
+#modalAsignacionFecha i.fa-times-circle {
+    font-size: 1.5rem;
+}
+
     </style>
 </head>
 <body class="h-screen overflow-hidden flex text-slate-800">
@@ -146,60 +160,39 @@ body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-
         </div>
 
         <div id="pedidosView" class="hidden">
-            <header class="flex justify-between items-start mb-10">
+            <header class="flex justify-between items-center mb-10">
                 <div>
-                    <h1 class="text-4xl font-black tracking-tight text-slate-900">Mis Pedidos</h1>
-                    <p class="text-slate-500 font-medium mt-1">Historial y seguimiento en tiempo real</p>
+                    <h1 class="text-4xl font-black tracking-tight text-slate-900 uppercase italic">Pedidos</h1>
+                    <p class="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Gestión Logística Central</p>
                 </div>
-                <button onclick="irDashboard()" class="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-700 transition-all">
-                    <i class="fas fa-arrow-left mr-2"></i> Volver al Dashboard
-                </button>
+                
+                <div class="bg-white px-6 py-3 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">Programación<br>por Día</p>
+                    </div>
+                    <div class="h-8 w-[1px] bg-slate-100 mx-1"></div>
+                    <input type="date" id="fechaFiltroPedidos" 
+                           class="bg-transparent border-none font-black text-slate-700 outline-none text-sm"
+                           onchange="cargarPedidosDashboard()">
+                </div>
             </header>
 
-            <div id="barra-programacion" class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <h3 class="text-2xl font-black text-slate-900 tracking-tighter">Programación de Cargas</h3>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Gestión por Fecha de Entrega</p>
-                    </div>
-                    
-                    <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-[1.5rem] border border-slate-100">
-                        <input type="date" id="fechaFiltroPedidos" 
-                               class="bg-transparent border-none font-black text-slate-700 outline-none px-4 py-2 focus:ring-0"
-                               onchange="cargarPedidosDashboard()">
-                        <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
-                        <button onclick="setFechaHoy()" class="px-4 py-2 bg-white rounded-xl shadow-sm text-[10px] font-black text-slate-600 hover:bg-slate-900 hover:text-white transition-all">HOY</button>
-                        <button onclick="setFechaManana()" class="px-4 py-2 bg-white rounded-xl shadow-sm text-[10px] font-black text-slate-600 hover:bg-slate-900 hover:text-white transition-all">MAÑANA</button>
-                    </div>
-                </div>
-
-                <div id="lote-acciones" class="mt-6 hidden transform transition-all duration-300">
-                    <div class="bg-slate-900 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-2xl">
-                        <div class="flex items-center gap-4 ml-4">
-                            <div class="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white"><i class="fas fa-layer-group"></i></div>
-                            <div>
-                                <p class="text-[10px] text-slate-500 font-black uppercase">Seleccionados</p>
-                                <p class="text-white font-bold"><span id="contador-seleccion">0</span> Pedidos</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <input type="date" id="fecha-bloque" class="bg-slate-800 text-white border-none rounded-xl px-4 py-2 text-sm outline-none">
-                            <button onclick="confirmarProgramacionBloque()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase">Confirmar Programa</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="mb-8">
+                <button id="btnModoSeleccion" onclick="toggleModoSeleccion()" 
+                        class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-xl hover:bg-blue-600 transition-all flex items-center gap-3">
+                    <i class="fas fa-list-check"></i> Seleccionar Pedidos
+                </button>
             </div>
 
             <div class="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
-                <button onclick="filtrarPedidos('Todos')" class="filter-btn active bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest">Todos</button>
-                <button onclick="filtrarPedidos('Pendiente')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-orange-50 hover:text-orange-500">Pendientes</button>
-                <button onclick="filtrarPedidos('Aceptado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-blue-50 hover:text-blue-500">Aceptados</button>
-                <button onclick="filtrarPedidos('En Ruta')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-purple-50 hover:text-purple-500">En Ruta</button>
-                <button onclick="filtrarPedidos('Entregado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-emerald-50 hover:text-emerald-500">Entregados</button>
-                <button onclick="filtrarPedidos('Cancelado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-500">Cancelados</button>
+                <button onclick="filtrarPedidos('Todos')" class="filter-btn active bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-xs uppercase">Todos</button>
+                <button onclick="filtrarPedidos('Pendiente')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-orange-50 hover:text-orange-500">Pendientes</button>
+                <button onclick="filtrarPedidos('Aceptado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-blue-50 hover:text-blue-500">Aceptados</button>
+                <button onclick="filtrarPedidos('En Ruta')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-purple-50 hover:text-purple-500">En Ruta</button>
+                <button onclick="filtrarPedidos('Entregado')" class="filter-btn bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-full font-bold text-xs uppercase hover:bg-emerald-50 hover:text-emerald-500">Entregados</button>
             </div>
 
-            <div id="listaPedidosCompleta" class="grid grid-cols-1 gap-4">
+            <div id="listaPedidosCompleta" class="space-y-3">
                 <p class="text-slate-400 italic">Cargando pedidos...</p>
             </div>
         </div>
@@ -1177,6 +1170,37 @@ async function procesarCancelacion() {
     }
 }
 
+
+let modoSeleccionActivo = false;
+
+function toggleModoSeleccion() {
+    modoSeleccionActivo = !modoSeleccionActivo;
+    const btn = document.getElementById('btnModoSeleccion');
+    const containers = document.querySelectorAll('.pedido-checkbox-container');
+    
+    if (modoSeleccionActivo) {
+        btn.innerHTML = '<i class="fas fa-times mr-2"></i> Cancelar Selección';
+        btn.classList.replace('bg-slate-900', 'bg-slate-500');
+        containers.forEach(el => el.classList.remove('hidden'));
+    } else {
+        btn.innerHTML = '<i class="fas fa-list-check mr-2"></i> Seleccionar Pedidos';
+        btn.classList.replace('bg-slate-500', 'bg-slate-900');
+        containers.forEach(el => el.classList.add('hidden'));
+        // Limpiar selección al cancelar
+        document.querySelectorAll('.pedido-checkbox').forEach(cb => cb.checked = false);
+        actualizarSeleccionados(); 
+    }
+}
+
+// Función para el botón de cancelar del panel negro
+function confirmarCancelacionMasiva() {
+    const seleccionados = obtenerSeleccionados(); // Esta función debe devolver los IDs marcados
+    if (confirm(`¿Estás seguro de cancelar ${seleccionados.length} pedidos seleccionados?`)) {
+        console.log("Cancelando pedidos:", seleccionados);
+        // Aquí llamas a tu función de Google Sheets para cambiar estatus a 'Cancelado'
+    }
+}
+
 // LANZADOR INICIAL
 window.onload = initDashboard;
 
@@ -1284,45 +1308,50 @@ window.onload = initDashboard;
     </button>
 </nav>
 
-<<div id="panel-programacion-flotante" 
-     style="display: none; position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); z-index: 9999;" 
-     class="bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-6">
+<div id="panel-programacion-flotante" 
+     style="display: none !important; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 999;" 
+     class="bg-slate-900 text-white px-6 py-4 rounded-[2.5rem] shadow-2xl flex items-center gap-6 border border-white/10 w-max animate-in fade-in slide-in-from-bottom-4">
     
-    <div class="flex flex-col">
-        <span class="text-[9px] font-black uppercase text-slate-400">Seleccionados</span>
-        <span id="contador-masivo-badge" class="font-black text-xl text-white">0</span>
+    <div class="flex flex-col border-r border-white/10 pr-6">
+        <span class="text-[9px] font-black uppercase text-slate-500">Seleccionados</span>
+        <span id="contador-masivo-badge" class="font-black text-2xl leading-none">0</span>
     </div>
     
-    <div style="height: 32px; width: 1px; background-color: #334155;"></div>
-    
-    <button onclick="abrirModalAsignacion()" 
-            class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg">
-        Asignar Fecha
-    </button>
+    <div class="flex gap-3">
+        <button onclick="abrirModalAsignacion()" 
+                class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all">
+            Asignar Fecha
+        </button>
+        <button onclick="confirmarCancelacionMasiva()" 
+                class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all">
+            Cancelar Pedidos
+        </button>
+    </div>
 </div>
 
-<div id="modalAsignacionFecha" class="hidden fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-20 duration-300">
-        <div class="p-6 text-center border-b border-slate-100">
-            <h3 class="font-black text-slate-900 uppercase tracking-tighter text-lg">Programar Entrega</h3>
-            <p class="text-slate-400 text-[10px] font-bold uppercase">Selecciona el día de carga</p>
+<div id="modalAsignacionFecha" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl relative animate-in zoom-in duration-200">
+        
+        <button onclick="cerrarModalAsignacion()" class="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors">
+            <i class="fas fa-times-circle text-2xl"></i>
+        </button>
+
+        <div class="p-8 text-center border-b border-slate-50">
+            <h3 class="font-black text-slate-900 uppercase tracking-tighter text-xl leading-none">Seleccionar Día de Carga</h3>
+            <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest mt-2">Logística de Suministro</p>
         </div>
 
-        <div class="py-8 px-10">
-            <div class="relative h-48 overflow-hidden bg-slate-50 rounded-2xl flex items-center justify-center">
-                <div class="absolute inset-0 pointer-events-none border-y-2 border-blue-600/10 bg-gradient-to-b from-white via-transparent to-white z-10"></div>
-                
+        <div class="py-10 px-10">
+            <div class="relative h-48 overflow-hidden bg-slate-50 rounded-[2rem] flex items-center justify-center">
+                <div class="absolute inset-0 pointer-events-none border-y-2 border-blue-600/10 z-10"></div>
                 <div id="date-picker-list" class="flex flex-col gap-4 overflow-y-scroll snap-y snap-mandatory h-full w-full no-scrollbar text-center py-20">
                     </div>
             </div>
         </div>
 
-        <div class="p-6 flex flex-col gap-3">
-            <button onclick="confirmarAsignacion()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-colors shadow-lg">
+        <div class="p-8">
+            <button onclick="confirmarAsignacion()" class="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">
                 Confirmar Fecha de Asignación
-            </button>
-            <button onclick="cerrarModalAsignacion()" class="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-colors">
-                Cancelar
             </button>
         </div>
     </div>
