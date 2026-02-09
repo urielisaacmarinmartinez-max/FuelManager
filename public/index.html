@@ -216,27 +216,27 @@
         </div>
 
         <div class="bg-white border border-slate-100 shadow-sm rounded-full px-6 py-2 flex items-center gap-4">
-            <div class="flex items-center gap-3">
-                <input type="date" id="fechaFiltroPedidos" 
-                       class="bg-transparent border-none font-black text-slate-700 outline-none text-sm w-32 cursor-pointer" 
-                       onchange="cargarPedidosDashboard()">
-                <i class="fas fa-calendar-alt text-slate-900 text-sm"></i>
-            </div>
-
-            <div class="h-6 w-[1px] bg-slate-200"></div>
-
-            <div class="flex gap-2">
-                <button onclick="setFechaHoy()" 
-                        class="px-4 py-1.5 bg-white border border-slate-50 rounded-lg shadow-sm text-[9px] font-black text-slate-500 hover:bg-slate-900 hover:text-white transition-all uppercase">
-                    HOY
-                </button>
-                <button onclick="setFechaManana()" 
-                        class="px-4 py-1.5 bg-white border border-slate-50 rounded-lg shadow-sm text-[9px] font-black text-slate-500 hover:bg-slate-900 hover:text-white transition-all uppercase">
-                    MAÑANA
-                </button>
-            </div>
-        </div>
+    <div class="relative flex items-center justify-center">
+        <input type="date" id="fechaFiltroPedidos" 
+               class="bg-transparent border-none font-black text-slate-900 outline-none text-sm w-32 cursor-pointer" 
+               onchange="cargarPedidosDashboard()">
     </div>
+
+    <div class="h-6 w-[1px] bg-slate-200"></div>
+
+    <div class="flex gap-2 relative z-50">
+        <button type="button" 
+                onclick="setFechaHoy(event)" 
+                class="px-4 py-1.5 bg-white border border-slate-50 rounded-lg shadow-sm text-[10px] font-black text-slate-500 hover:bg-slate-900 hover:text-white transition-all uppercase pointer-events-auto">
+            HOY
+        </button>
+        <button type="button" 
+                onclick="setFechaManana(event)" 
+                class="px-4 py-1.5 bg-white border border-slate-50 rounded-lg shadow-sm text-[10px] font-black text-slate-500 hover:bg-slate-900 hover:text-white transition-all uppercase pointer-events-auto">
+            MAÑANA
+        </button>
+    </div>
+</div>
 </header>
 
     <div class="mb-8 admin-only">
@@ -899,25 +899,43 @@ function dibujarEstaciones() {
 
 // Funciones de apoyo para el tiempo
 // --- CORRECCIÓN DE FUNCIONES DE APOYO ---
-function setFechaHoy(event) {
-    if (event) event.stopPropagation(); // Evita que el clic suba al contenedor
-    const input = document.getElementById('fechaFiltroPedidos');
-    const hoy = new Date().toISOString().split('T')[0];
+function setFechaHoy(e) {
+    // 1. Evitamos que el clic se propague al input de fecha
+    e.preventDefault();
+    e.stopPropagation();
     
-    input.value = hoy;
-    input.blur(); // <--- Esto cierra el calendario si se intentó abrir
+    const input = document.getElementById('fechaFiltroPedidos');
+    const hoy = new Date();
+    // Ajuste de zona horaria para evitar desfases de un día
+    const offset = hoy.getTimezoneOffset();
+    const fechaAjustada = new Date(hoy.getTime() - (offset * 60 * 1000));
+    const fechaStr = fechaAjustada.toISOString().split('T')[0];
+    
+    input.value = fechaStr;
+    
+    // 2. Quitamos el foco para que el navegador no intente abrir el calendario
+    input.blur();
+    
+    // 3. Ejecutamos tu función de carga
     cargarPedidosDashboard();
 }
 
-function setFechaManana(event) {
-    if (event) event.stopPropagation();
+function setFechaManana(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const input = document.getElementById('fechaFiltroPedidos');
-    const manana = new Date();
+    const hoy = new Date();
+    const manana = new Date(hoy);
     manana.setDate(manana.getDate() + 1);
-    const fechaStr = manana.toISOString().split('T')[0];
+    
+    const offset = manana.getTimezoneOffset();
+    const fechaAjustada = new Date(manana.getTime() - (offset * 60 * 1000));
+    const fechaStr = fechaAjustada.toISOString().split('T')[0];
     
     input.value = fechaStr;
-    input.blur(); // <--- Esto fuerza el cierre
+    input.blur();
+    
     cargarPedidosDashboard();
 }
 
