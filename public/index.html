@@ -944,32 +944,21 @@ async function renderizarPedidosLista(filtro = 'Todos') {
  * ÚNICA FUNCIÓN DE CONTROL: Maneja la barra negra inferior
  */
 function actualizarSeleccionados() {
-    // 1. Buscamos los elementos
     const checkboxes = document.querySelectorAll('.pedido-checkbox:checked');
     const panel = document.getElementById('panel-programacion-flotante');
     const badge = document.getElementById('contador-masivo-badge');
     
-    // Verificación de seguridad en consola
-    if (!panel) {
-        console.error("ERROR: No se encontró el ID 'panel-programacion-flotante' en el HTML");
-        return;
-    }
+    if (!panel) return;
 
     const total = checkboxes.length;
 
     if (total > 0) {
-        // Actualizamos número
         if (badge) badge.innerText = total;
-        
-        // FORZAMOS VISIBILIDAD: Quitamos hidden y usamos flex
+        // Quitamos el hidden y forzamos display flex eliminando el !important del HTML
         panel.classList.remove('hidden');
-        panel.style.display = 'flex'; 
-        
-        console.log("Panel activado: " + total + " pedidos seleccionados.");
+        panel.style.setProperty('display', 'flex', 'important');
     } else {
-        // Ocultamos todo
-        panel.classList.add('hidden');
-        panel.style.display = 'none';
+        panel.style.setProperty('display', 'none', 'important');
     }
 }
 
@@ -1047,33 +1036,7 @@ function cerrarModalAsignacion() {
     document.getElementById('modalAsignacionFecha').classList.add('hidden');
 }
 
-/**
- * Controla la visibilidad y el contador de la barra de acciones masivas
- * Se activa cada vez que el Admin marca/desmarca un pedido
- */
-function actualizarSeleccionados() {
-    const checkboxes = document.querySelectorAll('.pedido-checkbox:checked');
-    const panel = document.getElementById('panel-programacion-flotante');
-    const badge = document.getElementById('contador-masivo-badge');
-    
-    if (!panel || !badge) return;
 
-    const totalSeleccionados = checkboxes.length;
-
-    if (totalSeleccionados > 0) {
-        // Actualizamos el número en el badge
-        badge.innerText = totalSeleccionados;
-        
-        // Quitamos 'hidden' y aplicamos animaciones de entrada
-        panel.classList.remove('hidden');
-        panel.classList.replace('animate-out', 'animate-in');
-        panel.classList.replace('slide-out-to-bottom-10', 'slide-in-from-bottom-10');
-    } else {
-        // Animación de salida antes de ocultar (opcional si usas librerías de animación, 
-        // si no, simplemente ocultamos)
-        panel.classList.add('hidden');
-    }
-}
 
 async function verDetallePedido(id) {
     const userData = JSON.parse(localStorage.getItem('usuario'));
