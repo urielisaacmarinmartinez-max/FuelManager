@@ -7,53 +7,87 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-
+<style>
+        /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
+        
         /* Esconder checkboxes y barra si NO es logística o admin */
-body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
-    display: none !important;
-}
+        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
+            display: none !important;
+        }
 
-body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) #barra-programacion {
-    display: none !important;
-}
+        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) #barra-programacion {
+            display: none !important;
+        }
 
-/* Estilo para que la lista se vea alineada aunque no haya checkbox */
-body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-10.flex.justify-center {
-    width: 20px; /* Reducimos el espacio vacío para el gerente */
-}
+        /* Evitar cambios para el Gerente: respetamos su menú original */
+        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .admin-only {
+            display: none !important;
+        }
 
+        /* Estilo para que la lista se vea alineada aunque no haya checkbox */
+        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-10.flex.justify-center {
+            width: 20px; 
+        }
 
-
+        /* --- 2. ESTILOS BASE Y ANIMACIONES --- */
+        
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .side-panel-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        /* Animación para el icono de carga */
+        
         .spin-anim { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Asegura que el título sea exacto a tu boceto (Sin cursivas) */
-.titulo-seccion {
-    font-style: normal !important;
-    text-transform: none !important;
-}
+        /* --- 3. IMPLEMENTACIÓN SELECTOR DE FECHA (SIN ICONO) --- */
+        
+        /* Quita el icono de calendario nativo (el que marcaste con círculo verde) */
+        #fechaFiltroPedidos::-webkit-calendar-picker-indicator {
+            background: transparent;
+            bottom: 0;
+            color: transparent;
+            cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
 
-/* Ocultar casillas por defecto para todos */
-.pedido-checkbox-container {
-    display: none !important;
-}
+        #fechaFiltroPedidos {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-weight: 900; 
+            color: #0f172a;
+            text-align: center;
+        }
 
-/* Solo mostrarlas cuando se activa el modo selección */
-body.modo-seleccion-activo .pedido-checkbox-container {
-    display: block !important;
-}
+        /* --- 4. TÍTULOS Y SELECCIÓN MASIVA --- */
 
-/* Evitar cambios para el Gerente: respetamos su menú original */
-body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .admin-only {
-    display: none !important;
-}
+        .titulo-seccion {
+            font-style: normal !important;
+            text-transform: none !important;
+        }
 
+        /* Ocultar casillas por defecto para todos */
+        .pedido-checkbox-container {
+            display: none !important;
+        }
+
+        /* Solo mostrarlas cuando se activa el modo selección (Botón Azul) */
+        body.modo-seleccion-activo .pedido-checkbox-container {
+            display: block !important;
+        }
+        
+        /* Scroll personalizado para el modal estilo iPhone */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex text-slate-800">
