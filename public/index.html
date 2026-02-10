@@ -1195,40 +1195,46 @@ async function confirmarAsignacion() {
     if (!fechaSeleccionadaParaAsignar) return alert("Por favor, selecciona una fecha en el selector");
 
     try {
-        // Mostramos un loader o cambiamos el texto del botón
         const btn = document.querySelector('#modalAsignacionFecha button[onclick="confirmarAsignacion()"]');
         const originalText = btn.innerText;
         btn.innerText = "PROCESANDO...";
         btn.disabled = true;
 
-        const response = await fetch('/api/programar-pedidos-masivo', {
+        // --- CAMBIO CLAVE AQUÍ: Ajustamos URL y Body ---
+        const response = await fetch('/api/confirmar-bloque', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                pedidos: ids,
-                fechaProgramada: fechaSeleccionadaParaAsignar, // La del Picker iPhone
-                usuario: JSON.parse(localStorage.getItem('usuario')).nombre
+                idsPedidos: ids, // Cambiado de 'pedidos' a 'idsPedidos' para que coincida con server.js
+                bloqueProgramacion: fechaSeleccionadaParaAsignar // Cambiado de 'fechaProgramada' a 'bloqueProgramacion'
             })
         });
 
         const res = await response.json();
         
         if (res.success) {
-            alert(`Éxito: ${ids.length} pedidos movidos al bloque del ${fechaSeleccionadaParaAsignar}`);
+            alert(`✅ Éxito: ${ids.length} pedidos programados para el ${fechaSeleccionadaParaAsignar}`);
             cerrarModalAsignacion();
-            // Desactivamos el modo selección y recargamos
-            if(typeof toggleModoSeleccion === 'function' && modoSeleccionActivo) {
+            
+            // Desactivamos el modo selección
+            if (typeof modoSeleccionActivo !== 'undefined' && modoSeleccionActivo) {
                 toggleModoSeleccion(); 
             }
-            renderizarPedidosLista(); 
+            
+            // Recargamos la lista (asumiendo que por defecto carga 'Pendiente')
+            renderizarPedidosLista('Pendiente'); 
+
+            // Ocultamos la barra negra inferior si está visible
+            const barra = document.getElementById('barra-programacion');
+            if (barra) barra.classList.add('hidden');
+
         } else {
-            alert("Error: " + res.message);
+            alert("❌ Error: " + res.message);
         }
     } catch (e) {
         console.error("Error asignación:", e);
-        alert("Error de conexión al servidor");
+        alert("⚠️ Error de conexión al servidor. Revisa si el servidor está activo.");
     } finally {
-        // Restaurar botón
         const btn = document.querySelector('#modalAsignacionFecha button[onclick="confirmarAsignacion()"]');
         if(btn) {
             btn.innerText = "CONFIRMAR PROGRAMACIÓN";
