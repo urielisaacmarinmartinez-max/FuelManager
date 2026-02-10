@@ -139,14 +139,27 @@ app.get('/api/obtener-pedidos', async (req, res) => {
     const { estaciones, rol, fechaFiltro } = req.query; 
     try {
         let query = {};
-        if (fechaFiltro) query.bloque = fechaFiltro.trim();
 
-        if (rol === 'Fletera') {
+        // 1. Filtro por Fecha/Bloque
+        if (fechaFiltro && fechaFiltro !== 'null') {
+            query.bloque = fechaFiltro.trim();
+        }
+
+        // 2. Filtro por Permisos (Rol)
+        if (rol === 'Admin' || estaciones === 'TODAS') {
+            // No agregamos filtro de estación, ve todo.
+        } else if (rol === 'Fletera') {
             query.fletera = estaciones;
-        } else if (estaciones !== 'TODAS') {
-            // Aquí simplificamos: Mongo busca directo el nombre o ID que envíes
-            const ids = estaciones.split(',').map(e => e.trim());
-            query.estacion = { $in: ids };
+        } else {
+            // Para Gerentes: Buscamos pedidos que coincidan con sus IDs asignados
+            // Convertimos "EST_001, EST_002" en un array ['EST_001', 'EST_002']
+            const idsAsignados = estaciones.split(',').map(e => e.trim());
+            
+            // Usamos $or para buscar por ID o por si el nombre contiene el ID
+            query.$or = [
+                { estacion: { $in: idsAsignados } },
+                { folio: { $regex: idsAsignados.join('|'), $options: 'i' } } // Opcional: por si el folio contiene el ID
+            ];
         }
 
         const pedidos = await Pedido.find(query).sort({ fechaRegistroDB: -1 });
@@ -154,13 +167,16 @@ app.get('/api/obtener-pedidos', async (req, res) => {
         res.json({ 
             pedidos, 
             estadisticas: {
-                pendientes: pedidos.filter(p => p.estatus === 'Pendiente').length,
+                pendientes: pedidos.filter(p => p.estatus === 'Pendiente' || p.estatus === 'Nuevo').length,
                 enRuta: pedidos.filter(p => p.estatus === 'En Ruta').length,
                 entregados: pedidos.filter(p => p.estatus === 'Entregado').length,
                 programados: pedidos.filter(p => p.estatus === 'Aceptado').length
             }
         });
-    } catch (error) { res.status(500).json({ pedidos: [] }); }
+    } catch (error) { 
+        console.error("Error en obtener-pedidos:", error);
+        res.status(500).json({ pedidos: [] }); 
+    }
 });
 
 // 5. ACTUALIZAR TIRILLA (Sheets)
