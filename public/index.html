@@ -739,7 +739,7 @@ async function cargarPedidosDashboard() {
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
         const idEstacion = document.getElementById('modalEstacionId').value;
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbwiTjejEmBqcd0kHG4kbboYH4eWKwIVy95eTaj_qzPQILLaCTHbkx-uZBqLLMgHIMvw/exec';
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbx6HlP_KKN_PjuWWHdhCMlvhKLnSFRqd_gZblZWnJjq9Q0pz7od6TA9KnevNowAcwY/exec';
 
         const datos = {
             id_estacion: idEstacion,
@@ -1188,29 +1188,52 @@ function seleccionarFechaDelPicker(elemento) {
  * Envío masivo de la programación
  */
 async function confirmarAsignacion() {
-    const ids = Array.from(document.querySelectorAll('.pedido-checkbox:checked')).map(cb => cb.value);
+    const seleccionados = document.querySelectorAll('.pedido-checkbox:checked');
+    const ids = Array.from(seleccionados).map(cb => cb.value);
     
-    if (!fechaSeleccionadaParaAsignar) return alert("Selecciona una fecha");
+    if (ids.length === 0) return alert("No hay pedidos seleccionados");
+    if (!fechaSeleccionadaParaAsignar) return alert("Por favor, selecciona una fecha en el selector");
 
     try {
+        // Mostramos un loader o cambiamos el texto del botón
+        const btn = document.querySelector('#modalAsignacionFecha button[onclick="confirmarAsignacion()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "PROCESANDO...";
+        btn.disabled = true;
+
         const response = await fetch('/api/programar-pedidos-masivo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 pedidos: ids,
-                fechaProgramada: fechaSeleccionadaParaAsignar,
-                admin: JSON.parse(localStorage.getItem('usuario')).nombre
+                fechaProgramada: fechaSeleccionadaParaAsignar, // La del Picker iPhone
+                usuario: JSON.parse(localStorage.getItem('usuario')).nombre
             })
         });
 
         const res = await response.json();
+        
         if (res.success) {
-            alert(`Logística actualizada: ${ids.length} pedidos asignados al ${fechaSeleccionadaParaAsignar}`);
+            alert(`Éxito: ${ids.length} pedidos movidos al bloque del ${fechaSeleccionadaParaAsignar}`);
             cerrarModalAsignacion();
-            renderizarPedidosLista(); // Recarga la lista
+            // Desactivamos el modo selección y recargamos
+            if(typeof toggleModoSeleccion === 'function' && modoSeleccionActivo) {
+                toggleModoSeleccion(); 
+            }
+            renderizarPedidosLista(); 
+        } else {
+            alert("Error: " + res.message);
         }
     } catch (e) {
         console.error("Error asignación:", e);
+        alert("Error de conexión al servidor");
+    } finally {
+        // Restaurar botón
+        const btn = document.querySelector('#modalAsignacionFecha button[onclick="confirmarAsignacion()"]');
+        if(btn) {
+            btn.innerText = "CONFIRMAR PROGRAMACIÓN";
+            btn.disabled = false;
+        }
     }
 }
 

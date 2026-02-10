@@ -88,20 +88,29 @@ document.addEventListener('change', (e) => {
 });
 
 // 2. Función para enviar el lote programado al servidor
+// Añadimos 'async' al inicio para que el await no marque error
 async function confirmarProgramacionBloque() {
     const seleccionados = Array.from(document.querySelectorAll('.pedido-checkbox:checked')).map(cb => cb.value);
-    const fecha = document.getElementById('fecha-bloque').value;
+    
+    // CAMBIO IMPORTANTE: Ahora usamos la variable que actualiza el Picker de iPhone
+    // Si tu variable global se llama distinto, asegúrate de poner el nombre correcto aquí
+    const fecha = fechaSeleccionadaParaAsignar; 
 
     if (!fecha) {
-        alert("⚠️ Por favor selecciona una fecha para el bloque de programación.");
+        alert("⚠️ Por favor desliza el selector para elegir una fecha.");
+        return;
+    }
+
+    if (seleccionados.length === 0) {
+        alert("⚠️ No has seleccionado ningún pedido.");
         return;
     }
 
     if (!confirm(`¿Confirmar programación de ${seleccionados.length} pedidos para el bloque del día ${fecha}?`)) return;
 
-    // Mostrar estado de carga en el botón
+    // Mostrar estado de carga
     const btn = document.querySelector('#barra-programacion button');
-    const originalText = btn.innerText;
+    const originalText = btn.innerHTML; // Usamos innerHTML por si tienes iconos
     btn.innerText = "PROCESANDO...";
     btn.disabled = true;
 
@@ -117,10 +126,18 @@ async function confirmarProgramacionBloque() {
 
         const res = await response.json();
         if (res.success) {
-            alert("✅ ¡Bloque programado! Ahora el contador puede visualizar estos pedidos en la fecha seleccionada.");
-            // Recargamos la lista para que desaparezcan los checkboxes de lo ya programado
+            alert("✅ ¡Bloque programado! Ahora contabilidad puede visualizar estos pedidos.");
+            
+            // 1. Cerramos el modal del Picker si está abierto
+            if (typeof cerrarModalAsignacion === 'function') cerrarModalAsignacion();
+            
+            // 2. Quitamos el modo selección (para que desaparezcan los checkboxes)
+            if (typeof toggleModoSeleccion === 'function') toggleModoSeleccion();
+            
+            // 3. Recargamos la lista
             renderizarPedidosLista('Pendiente'); 
-            // Limpiar y ocultar barra
+            
+            // 4. Ocultamos la barra negra
             document.getElementById('barra-programacion').classList.add('hidden', 'translate-y-2', 'opacity-0');
         } else {
             alert("Error: " + res.message);
@@ -129,7 +146,7 @@ async function confirmarProgramacionBloque() {
         console.error("Error al confirmar bloque:", error);
         alert("Ocurrió un error de conexión al procesar el bloque.");
     } finally {
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
