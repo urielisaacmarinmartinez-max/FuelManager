@@ -196,27 +196,40 @@ app.get('/api/obtener-pedidos', async (req, res) => {
             query['BLOQUE DE PROGRAMACIÓN'] = fechaFiltro.trim();
         }
 
-        if (rol !== 'Admin' && estaciones !== 'TODAS') {
+        if (rol !== 'Admin' && estaciones && estaciones !== 'TODAS') {
+            const listaFiltro = estaciones.split(',').map(e => e.trim());
             if (rol === 'Fletera') {
-                query['FLETERA'] = estaciones;
+                query['FLETERA'] = { $in: listaFiltro };
             } else {
-                const listaEstaciones = estaciones.split(',').map(e => e.trim());
-                query['ESTACIÓN'] = { $in: listaEstaciones };
+                // El gerente filtra por nombre de estación
+                query['ESTACIÓN'] = { $in: listaFiltro };
             }
         }
 
         const pedidos = await Pedido.find(query).sort({ fechaRegistroDB: -1 });
 
+        // Función auxiliar para contar ignorando Mayúsculas/Minúsculas
+        const contarPorEstatus = (lista, statusBuscado) => {
+            return lista.filter(p => {
+                const s = (p['ESTATUS'] || '').toUpperCase();
+                if (statusBuscado === 'PENDIENTE') return s === 'PENDIENTE' || s === 'NUEVO';
+                return s === statusBuscado;
+            }).length;
+        };
+
         res.json({ 
             pedidos, 
             estadisticas: {
-                pendientes: pedidos.filter(p => p['ESTATUS'] === 'Pendiente' || p['ESTATUS'] === 'Nuevo').length,
-                enRuta: pedidos.filter(p => p['ESTATUS'] === 'En Ruta').length,
-                entregados: pedidos.filter(p => p['ESTATUS'] === 'Entregado').length,
-                programados: pedidos.filter(p => p['ESTATUS'] === 'Aceptado').length
+                pendientes: contarPorEstatus(pedidos, 'PENDIENTE'),
+                enRuta: contarPorEstatus(pedidos, 'EN RUTA'),
+                entregados: contarPorEstatus(pedidos, 'ENTREGADO'),
+                programados: contarPorEstatus(pedidos, 'ACEPTADO')
             }
         });
-    } catch (error) { res.status(500).json({ pedidos: [] }); }
+    } catch (error) { 
+        console.error("Error en obtener-pedidos:", error);
+        res.status(500).json({ pedidos: [], estadisticas: { pendientes: 0, enRuta: 0, entregados: 0, programados: 0 } }); 
+    }
 });
 
 // 5. ACTUALIZAR TIRILLA
