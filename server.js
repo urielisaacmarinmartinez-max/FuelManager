@@ -19,36 +19,36 @@ mongoose.connect(process.env.MONGODB_URI)
   })
   .catch(err => console.error('❌ Error conexión Mongo:', err));
 
-// --- ESQUEMA COMPLETO (26 COLUMNAS) ---
+// --- ESQUEMA COMPLETO (Sincronizado con nombres de Excel para evitar errores en Frontend) ---
 const pedidoSchema = new mongoose.Schema({
     folio: { type: String, unique: true },
-    fechaRegistro: String,           // FECHA DE REGISTRO
-    bloque: String,                  // BLOQUE DE PROGRAMACIÓN
-    estacion: String,                // ESTACIÓN
-    producto: String,                // TIPO DE PRODUCTO
-    litros: Number,                  // LITROS
-    total: String,                   // TOTAL
-    fechaEntrega: String,            // FECHA DE ENTREGA
-    prioridad: String,               // PRIORIDAD
-    estatus: String,                 // ESTATUS
-    usuario: String,                 // USUARIO
-    estatusCarga: String,            // ESTATUS DE CARGA
-    confirmacionReubicacion: String, // CONFIRMACIÓN O REUBICACIÓN
-    ordenRelacionada: String,        // ORDEN RELACIONADA
-    orden: String,                   // ORDEN
-    fletera: String,                 // FLETERA
-    unidad: String,                  // UNIDAD
-    placa1: String,                  // PLACA 1
-    placa2: String,                  // PLACA 2
-    operador: String,                // OPERADOR
-    cantidadExacta: String,          // CANTIDAD EXACTA
-    eta: String,                     // ETA
-    fechaDescarga: String,           // FECHA DE DESCARGA
-    tipoOperacion: String,           // TIPO DE OPERACIÓN
-    factura: String,                 // FACTURA
-    compra: String,                  // COMPRA
-    cancelacionPedido: String,       // CANCELACIÓN DE PEDIDO
-    motivoCancelacion: String,       // MOTIVO DE CANCELACIÓN
+    'FECHA DE REGISTRO': String,
+    'BLOQUE DE PROGRAMACIÓN': String,
+    'ESTACIÓN': String,
+    'TIPO DE PRODUCTO': String,
+    'LITROS': Number,
+    'TOTAL': String,
+    'FECHA DE ENTREGA': String,
+    'PRIORIDAD': String,
+    'ESTATUS': String,
+    'USUARIO': String,
+    'ESTATUS DE CARGA': String,
+    'CONFIRMACIÓN O REUBICACIÓN': String,
+    'ORDEN RELACIONADA': String,
+    'ORDEN': String,
+    'FLETERA': String,
+    'UNIDAD': String,
+    'PLACA 1': String,
+    'PLACA 2': String,
+    'OPERADOR': String,
+    'CANTIDAD EXACTA': String,
+    'ETA': String,
+    'FECHA DE DESCARGA': String,
+    'TIPO DE OPERACIÓN': String,
+    'FACTURA': String,
+    'COMPRA': String,
+    'CANCELACIÓN DE PEDIDO': String,
+    'MOTIVO DE CANCELACIÓN': String,
     fechaRegistroDB: { type: Date, default: Date.now }
 });
 const Pedido = mongoose.model('Pedido', pedidoSchema);
@@ -73,38 +73,38 @@ async function sincronizarHojasAMongo() {
             
             const data = rows.map(r => ({
                 folio: r.get('FOLIO'),
-                fechaRegistro: r.get('FECHA DE REGISTRO'),
-                bloque: r.get('BLOQUE DE PROGRAMACIÓN'),
-                estacion: r.get('ESTACIÓN'),
-                producto: r.get('TIPO DE PRODUCTO'),
-                litros: Number(r.get('LITROS')) || 0,
-                total: r.get('TOTAL'),
-                fechaEntrega: r.get('FECHA DE ENTREGA'),
-                prioridad: r.get('PRIORIDAD'),
-                estatus: r.get('ESTATUS') || 'Pendiente',
-                usuario: r.get('USUARIO'),
-                estatusCarga: r.get('ESTATUS DE CARGA'),
-                confirmacionReubicacion: r.get('CONFIRMACIÓN O REUBICACIÓN'),
-                ordenRelacionada: r.get('ORDEN RELACIONADA'),
-                orden: r.get('ORDEN'),
-                fletera: r.get('FLETERA'),
-                unidad: r.get('UNIDAD'),
-                placa1: r.get('PLACA 1'),
-                placa2: r.get('PLACA 2'),
-                operador: r.get('OPERADOR'),
-                cantidadExacta: r.get('CANTIDAD EXACTA'),
-                eta: r.get('ETA'),
-                fechaDescarga: r.get('FECHA DE DESCARGA'),
-                tipoOperacion: r.get('TIPO DE OPERACIÓN'),
-                factura: r.get('FACTURA'),
-                compra: r.get('COMPRA'),
-                cancelacionPedido: r.get('CANCELACIÓN DE PEDIDO'),
-                motivoCancelacion: r.get('MOTIVO DE CANCELACIÓN')
+                'FECHA DE REGISTRO': r.get('FECHA DE REGISTRO'),
+                'BLOQUE DE PROGRAMACIÓN': r.get('BLOQUE DE PROGRAMACIÓN'),
+                'ESTACIÓN': r.get('ESTACIÓN'),
+                'TIPO DE PRODUCTO': r.get('TIPO DE PRODUCTO'),
+                'LITROS': Number(r.get('LITROS')) || 0,
+                'TOTAL': r.get('TOTAL'),
+                'FECHA DE ENTREGA': r.get('FECHA DE ENTREGA'),
+                'PRIORIDAD': r.get('PRIORIDAD'),
+                'ESTATUS': r.get('ESTATUS') || 'Pendiente',
+                'USUARIO': r.get('USUARIO'),
+                'ESTATUS DE CARGA': r.get('ESTATUS DE CARGA'),
+                'CONFIRMACIÓN O REUBICACIÓN': r.get('CONFIRMACIÓN O REUBICACIÓN'),
+                'ORDEN RELACIONADA': r.get('ORDEN RELACIONADA'),
+                'ORDEN': r.get('ORDEN'),
+                'FLETERA': r.get('FLETERA'),
+                'UNIDAD': r.get('UNIDAD'),
+                'PLACA 1': r.get('PLACA 1'),
+                'PLACA 2': r.get('PLACA 2'),
+                'OPERADOR': r.get('OPERADOR'),
+                'CANTIDAD EXACTA': r.get('CANTIDAD EXACTA'),
+                'ETA': r.get('ETA'),
+                'FECHA DE DESCARGA': r.get('FECHA DE DESCARGA'),
+                'TIPO DE OPERACIÓN': r.get('TIPO DE OPERACIÓN'),
+                'FACTURA': r.get('FACTURA'),
+                'COMPRA': r.get('COMPRA'),
+                'CANCELACIÓN DE PEDIDO': r.get('CANCELACIÓN DE PEDIDO'),
+                'MOTIVO DE CANCELACIÓN': r.get('MOTIVO DE CANCELACIÓN')
             }));
 
             if (data.length > 0) {
                 await Pedido.insertMany(data);
-                console.log(`✅ Migración exitosa: ${data.length} pedidos con todas sus columnas.`);
+                console.log(`✅ Migración exitosa: ${data.length} pedidos sincronizados.`);
             }
         }
     } catch (e) { 
@@ -160,58 +160,48 @@ app.get('/api/estaciones', async (req, res) => {
     } catch (error) { res.status(500).json({ error: "Error" }); }
 });
 
-// 3. GUARDAR PEDIDO (Actualizado con los campos de tu lista)
+// 3. GUARDAR PEDIDO
 app.post('/api/pedidos', async (req, res) => {
     const p = req.body;
     const fechaMex = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
     try {
-        await Pedido.create({
+        const nuevoPedido = {
             folio: p.folio,
-            fechaRegistro: fechaMex,
-            estacion: p.estacion,
-            producto: p.combustible,
-            litros: p.litros,
-            total: p.total,
-            fechaEntrega: p.fecha_entrega,
-            prioridad: p.prioridad,
-            estatus: 'Pendiente',
-            usuario: p.usuario
-        });
-
-        await doc.loadInfo();
-        const sheet = doc.sheetsByTitle['Pedidos'];
-        await sheet.addRow({ 
-            'FOLIO': p.folio, 
-            'FECHA DE REGISTRO': fechaMex, 
-            'ESTACIÓN': p.estacion, 
-            'TIPO DE PRODUCTO': p.combustible, 
-            'LITROS': p.litros, 
-            'TOTAL': p.total, 
+            'FECHA DE REGISTRO': fechaMex,
+            'ESTACIÓN': p.estacion,
+            'TIPO DE PRODUCTO': p.combustible,
+            'LITROS': p.litros,
+            'TOTAL': p.total,
             'FECHA DE ENTREGA': p.fecha_entrega,
             'PRIORIDAD': p.prioridad,
             'ESTATUS': 'Pendiente',
             'USUARIO': p.usuario
-        });
+        };
+        
+        await Pedido.create(nuevoPedido);
+
+        await doc.loadInfo();
+        const sheet = doc.sheetsByTitle['Pedidos'];
+        await sheet.addRow(nuevoPedido);
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 4. OBTENER PEDIDOS
+// 4. OBTENER PEDIDOS (Corregido para Gerentes y Admin)
 app.get('/api/obtener-pedidos', async (req, res) => {
     const { estaciones, rol, fechaFiltro } = req.query; 
     try {
         let query = {};
-        if (fechaFiltro && fechaFiltro !== 'null') query.bloque = fechaFiltro.trim();
+        if (fechaFiltro && fechaFiltro !== 'null' && fechaFiltro !== '') {
+            query['BLOQUE DE PROGRAMACIÓN'] = fechaFiltro.trim();
+        }
 
         if (rol !== 'Admin' && estaciones !== 'TODAS') {
             if (rol === 'Fletera') {
-                query.fletera = estaciones;
+                query['FLETERA'] = estaciones;
             } else {
-                const idsAsignados = estaciones.split(',').map(e => e.trim());
-                query.$or = [
-                    { estacion: { $in: idsAsignados } },
-                    { estacion: { $regex: idsAsignados.join('|'), $options: 'i' } }
-                ];
+                const listaEstaciones = estaciones.split(',').map(e => e.trim());
+                query['ESTACIÓN'] = { $in: listaEstaciones };
             }
         }
 
@@ -220,10 +210,10 @@ app.get('/api/obtener-pedidos', async (req, res) => {
         res.json({ 
             pedidos, 
             estadisticas: {
-                pendientes: pedidos.filter(p => p.estatus === 'Pendiente' || p.estatus === 'Nuevo').length,
-                enRuta: pedidos.filter(p => p.estatus === 'En Ruta').length,
-                entregados: pedidos.filter(p => p.estatus === 'Entregado').length,
-                programados: pedidos.filter(p => p.estatus === 'Aceptado').length
+                pendientes: pedidos.filter(p => p['ESTATUS'] === 'Pendiente' || p['ESTATUS'] === 'Nuevo').length,
+                enRuta: pedidos.filter(p => p['ESTATUS'] === 'En Ruta').length,
+                entregados: pedidos.filter(p => p['ESTATUS'] === 'Entregado').length,
+                programados: pedidos.filter(p => p['ESTATUS'] === 'Aceptado').length
             }
         });
     } catch (error) { res.status(500).json({ pedidos: [] }); }
@@ -246,12 +236,12 @@ app.post('/api/actualizar-tirilla', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
-// 7. REUBICAR (Actualizado para MongoDB)
+// 7. REUBICAR
 app.post('/api/reubicar-pedido', async (req, res) => {
     const { folioOriginal, folioDestino, idOrden } = req.body;
     try {
-        await Pedido.updateOne({ folio: folioOriginal }, { estatus: 'Pendiente', unidad: '', orden: '' });
-        await Pedido.updateOne({ folio: folioDestino }, { estatus: 'En Ruta', orden: idOrden });
+        await Pedido.updateOne({ folio: folioOriginal }, { 'ESTATUS': 'Pendiente', 'UNIDAD': '', 'ORDEN': '' });
+        await Pedido.updateOne({ folio: folioDestino }, { 'ESTATUS': 'En Ruta', 'ORDEN': idOrden });
 
         await doc.loadInfo();
         const rowsP = await doc.sheetsByTitle['Pedidos'].getRows();
@@ -266,12 +256,12 @@ app.post('/api/reubicar-pedido', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
-// 8. CONFIRMAR BLOQUE (Actualizado para MongoDB)
+// 8. CONFIRMAR BLOQUE
 app.post('/api/confirmar-bloque', async (req, res) => {
     const ids = req.body.idsPedidos || req.body.pedidos;
     const bloque = req.body.bloqueProgramacion || req.body.fechaProgramada;
     try {
-        await Pedido.updateMany({ folio: { $in: ids } }, { bloque: bloque, estatus: 'Aceptado' });
+        await Pedido.updateMany({ folio: { $in: ids } }, { 'BLOQUE DE PROGRAMACIÓN': bloque, 'ESTATUS': 'Aceptado' });
         await doc.loadInfo();
         const rows = await doc.sheetsByTitle['Pedidos'].getRows();
         for (let id of ids) {
