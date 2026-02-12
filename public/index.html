@@ -561,41 +561,37 @@ async function cargarPedidosDashboard() {
         const userData = JSON.parse(localStorage.getItem('usuario'));
         if (!userData) return;
 
-        // 1. Normalización de datos recibidos del servidor
+        // 1. Normalización de datos recibidos
         let todasLasEstaciones = [];
         if (Array.isArray(res)) {
             todasLasEstaciones = res;
         } else if (res && res.datos) {
-            // Estructura común cuando viene de Google Sheets
-            todasLasEstaciones = res.datos.Estaciones || res.datos.TIRILLAS || [];
+            todasLasEstaciones = res.datos.Estaciones || res.datos.TIRILLAS || res.datos.estaciones || [];
         }
 
-        // 2. Lógica de "Superusuario" para Admin Policon
-        // Limpiamos los IDs del usuario y los pasamos a mayúsculas para evitar errores de dedo
+        // 2. Lógica de "Superusuario"
         const misIds = userData.estaciones ? userData.estaciones.split(',').map(s => s.trim().toUpperCase()) : [];
-        
-        // El Admin es admin si su rol es Logistica o si sus estaciones asignadas dicen "TODAS"
-        const esAdmin = misIds.includes('TODAS') || userData.rol === 'Logistica_Policon';
+        const esAdmin = misIds.includes('TODAS') || userData.rol === 'Logistica_Policon' || userData.rol === 'Admin';
 
         console.log("Usuario:", userData.nombre, "| ¿Es Admin?:", esAdmin);
 
-        // 3. Filtrado Crucial
+        // 3. Filtrado Crucial (BLINDADO)
         let estacionesVisibles = [];
         if (esAdmin) {
             console.log("Acceso total concedido. Cargando " + todasLasEstaciones.length + " estaciones.");
             estacionesVisibles = todasLasEstaciones;
         } else {
-            // Filtro para Gerentes: el id de la estación debe estar en la lista del usuario
             estacionesVisibles = todasLasEstaciones.filter(est => {
-                // Buscamos coincidencia en id o nombre (por si acaso)
-                return misIds.includes(est.id?.toString().toUpperCase()) || 
-                       misIds.includes(est.nombre?.toString().toUpperCase());
+                // Buscamos el nombre o ID en cualquier formato posible (minúscula o MAYÚSCULA)
+                const nombreEst = (est.nombre || est.NOMBRE || "").toString().toUpperCase();
+                const idEst = (est.id || est.ID || est._id || "").toString().toUpperCase();
+                
+                return misIds.includes(idEst) || misIds.includes(nombreEst);
             });
             console.log("Acceso limitado. Estaciones encontradas:", estacionesVisibles.length);
         }
 
-        // 4. Actualización de Variables Globales (ESTO ES LO QUE DIBUJA LAS TARJETAS)
-        // Sobreescribimos las variables que usa 'dibujarEstaciones()'
+        // 4. Actualización de Variables Globales
         estacionesData = estacionesVisibles;
         estacionesBase = todasLasEstaciones; 
 
@@ -604,9 +600,12 @@ async function cargarPedidosDashboard() {
         if (select) {
             select.innerHTML = '<option value="">Seleccione Estación</option>';
             estacionesVisibles.forEach(est => {
+                const nombre = est.nombre || est.NOMBRE || "S/N";
+                const id = est.id || est.ID || est._id;
+                
                 const option = document.createElement('option');
-                option.value = est.id; 
-                option.textContent = est.nombre;
+                option.value = id; 
+                option.textContent = nombre;
                 select.appendChild(option);
             });
         }
@@ -619,12 +618,14 @@ async function cargarPedidosDashboard() {
                 console.error("Error: La función 'dibujarEstaciones' no existe.");
             }
         } else {
-            // Si llegamos aquí, es que el filtro no dejó pasar nada
-            const container = document.querySelector('.grid') || document.getElementById('estacionesContainer');
+            // Cambio aquí: Buscamos el ID correcto del contenedor de "Mis Estaciones"
+            const container = document.getElementById('estacionesCardsContainer') || document.getElementById('estacionesContainer');
             if (container) {
                 container.innerHTML = `
-                    <div class="col-span-full text-center p-10">
-                        <p class="text-slate-400 font-bold">No se encontraron estaciones asignadas para: ${userData.estaciones}</p>
+                    <div class="col-span-full text-center p-10 bg-white rounded-[2rem] border border-dashed border-slate-200">
+                        <i class="fas fa-gas-pump text-slate-200 text-4xl mb-4"></i>
+                        <p class="text-slate-400 font-bold">No tienes estaciones asignadas o no coinciden con el catálogo.</p>
+                        <p class="text-[10px] text-slate-300 mt-2 uppercase font-black">Buscando: ${userData.estaciones}</p>
                     </div>`;
             }
         }
