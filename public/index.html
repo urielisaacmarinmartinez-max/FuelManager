@@ -1008,33 +1008,41 @@ async function renderizarPedidosLista(filtro = 'Todos') {
     container.innerHTML = '<div class="p-10 text-center text-slate-400 animate-pulse font-black uppercase text-xs tracking-widest">Generando Lista Logística...</div>';
 
     try {
-        // CAMBIO: Enviamos 'fechaFiltro' para que el servidor busque en la Columna C (Bloque)
         const url = `/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}&fechaFiltro=${fechaSeleccionada}`;
         const response = await fetch(url);
         const data = await response.json();
-        let pedidos = data.pedidos || [];
+        let pedidosOriginales = data.pedidos || [];
 
-        if (filtro !== 'Todos') {
-            pedidos = pedidos.filter(p => p.estatus.toLowerCase() === filtro.toLowerCase());
-        }
+        // --- LÓGICA HÍBRIDA DE FILTRADO ---
+        let pedidos = pedidosOriginales.filter(p => {
+            const statusActual = (p.estatus || p['ESTATUS'] || 'Pendiente').toLowerCase();
+            if (filtro === 'Todos') return true;
+            return statusActual === filtro.toLowerCase();
+        });
 
         if (pedidos.length === 0) {
             container.innerHTML = `<p class="p-10 text-center font-bold text-slate-400">No hay pedidos programados para el día seleccionado.</p>`;
-            actualizarSeleccionados(); 
+            if (typeof actualizarSeleccionados === 'function') actualizarSeleccionados(); 
             return;
         }
 
-        // 2. RENDERIZADO CON PROTECCIÓN DE CLASES
+        // 2. RENDERIZADO CON MAPEO SEGURO
         container.innerHTML = pedidos.map(p => {
-            const estatusNormalizado = p.estatus ? p.estatus.trim().toLowerCase() : '';
+            // Mapeo de campos (Busca minúscula o Mayúscula del Excel)
+            const id = p._id || p.id;
+            const estacion = p.estacion || p['ESTACIÓN'] || 'S/N';
+            const producto = p.producto || p['TIPO DE PRODUCTO'] || 'EXTRA';
+            const litros = p.litros || p['LITROS'] || 0;
+            const estatus = p.estatus || p['ESTATUS'] || 'Pendiente';
+            const total = p.total || p['TOTAL'] || '$0.00';
             
-            // Ajuste de colores: Aceptado (Programado) ahora es azul
+            const estatusNormalizado = estatus.trim().toLowerCase();
+            
             const color = estatusNormalizado === 'pendiente' ? 'orange' : 
                           estatusNormalizado === 'en ruta' ? 'purple' : 
                           estatusNormalizado === 'entregado' ? 'emerald' : 
                           estatusNormalizado === 'aceptado' ? 'blue' : 'slate';
 
-            // Permitimos selección si es Pendiente o si ya fue Aceptado (para reprogramar si es necesario)
             const permiteSeleccion = estatusNormalizado === 'pendiente' || estatusNormalizado === 'aceptado';
 
             return `
@@ -1042,51 +1050,49 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                 
                 <div class="pedido-checkbox-container w-10 flex justify-center">
                     ${permiteSeleccion ? 
-                        `<input type="checkbox" value="${p.id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
+                        `<input type="checkbox" value="${id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
                         : `<i class="fas fa-check text-emerald-400 text-xs"></i>`}
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 flex-1 items-center gap-4 ml-4">
                     <div class="flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estación</span>
-                        <span class="font-bold text-slate-800 text-sm truncate uppercase">${p.estacion}</span>
+                        <span class="font-bold text-slate-800 text-sm truncate uppercase">${estacion}</span>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Producto / Litros</span>
-                        <span class="font-bold text-slate-600 text-xs uppercase">${p.producto} <span class="text-blue-500">— ${Number(p.litros).toLocaleString()}L</span></span>
+                        <span class="font-bold text-slate-600 text-xs uppercase">${producto} <span class="text-blue-500">— ${Number(litros).toLocaleString()}L</span></span>
                     </div>
                     <div class="hidden md:flex flex-col">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estatus</span>
                         <div>
                             <span class="inline-block px-2 py-0.5 rounded-full bg-${color}-50 text-${color}-600 text-[9px] font-black uppercase">
-                                ${p.estatus}
+                                ${estatus}
                             </span>
                         </div>
                     </div>
                     <div class="hidden md:flex flex-col items-end mr-6">
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-right">Monto</span>
-                        <span class="font-black text-slate-900 text-sm">${p.total}</span>
+                        <span class="font-black text-slate-900 text-sm">${total}</span>
                     </div>
                 </div>
 
-                <button onclick="verDetallePedido('${p.id}')" class="bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all">
+                <button onclick="verDetallePedido('${id}')" class="bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all">
                     <i class="fas fa-chevron-right text-xs"></i>
                 </button>
             </div>`;
         }).join('');
         
-        // 3. SINCRONIZAR VISIBILIDAD INMEDIATA
+        // Sincronizar UI
         if (typeof modoSeleccionActivo !== 'undefined' && modoSeleccionActivo) {
             document.body.classList.add('modo-seleccion-activo');
-        } else {
-            document.body.classList.remove('modo-seleccion-activo');
         }
 
-        actualizarSeleccionados();
+        if (typeof actualizarSeleccionados === 'function') actualizarSeleccionados();
 
     } catch (e) {
-        console.error("Error:", e);
-        container.innerHTML = '<p class="text-red-500 text-center font-bold p-10">Error de conexión al servidor.</p>';
+        console.error("Error en renderizado:", e);
+        container.innerHTML = '<p class="text-red-500 text-center font-bold p-10">Error al cargar la lista.</p>';
     }
 }
 
