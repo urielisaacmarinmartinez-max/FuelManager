@@ -493,12 +493,13 @@ async function cargarPedidosDashboard() {
         const response = await fetch(`/api/obtener-pedidos?estaciones=${encodeURIComponent(est)}&rol=${userData.rol}`);
         const data = await response.json();
         
-        // Actualizar contadores
+        // --- 1. ACTUALIZAR CONTADORES (Blindados) ---
         const cPendientes = document.getElementById('countPendientes');
         const cEnRuta = document.getElementById('countEnRuta');
         const cEntregados = document.getElementById('countEntregados');
 
         if (data.estadisticas) {
+            // Usamos || 0 para que nunca aparezca vacío o NaN
             if (cPendientes) cPendientes.innerText = data.estadisticas.pendientes || 0;
             if (cEnRuta) cEnRuta.innerText = data.estadisticas.enRuta || 0;
             if (cEntregados) cEntregados.innerText = data.estadisticas.entregados || 0;
@@ -512,8 +513,9 @@ async function cargarPedidosDashboard() {
             return;
         }
 
+        // --- 2. RENDERIZADO DE TARJETAS (Híbrido) ---
         container.innerHTML = data.pedidos.map(p => {
-            // LÓGICA INTELIGENTE: Busca en minúscula (DB) o en MAYÚSCULA (Excel)
+            // Mapeo seguro: Prioriza minúsculas (DB) y cae en Mayúsculas (Excel)
             const estatusReal = p.estatus || p['ESTATUS'] || 'Pendiente';
             const estacionReal = p.estacion || p['ESTACIÓN'] || 'S/N';
             const productoReal = p.producto || p['TIPO DE PRODUCTO'] || 'Combustible';
@@ -521,28 +523,32 @@ async function cargarPedidosDashboard() {
             const totalReal = p.total || p['TOTAL'] || '$0.00';
             const fechaReal = p.fecha || p['FECHA DE REGISTRO'] || 'Reciente';
 
-            const colorClass = estatusReal === 'Pendiente' ? 'bg-orange-50 text-orange-600' : 
-                               estatusReal === 'En Ruta' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600';
+            const estatusNormalizado = estatusReal.toLowerCase();
+            const colorClass = estatusNormalizado.includes('pendiente') ? 'bg-orange-50 text-orange-600' : 
+                               estatusNormalizado.includes('ruta') ? 'bg-blue-50 text-blue-600' : 
+                               'bg-emerald-50 text-emerald-600';
 
             return `
                 <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 transition-all hover:scale-[1.02]">
                     <div class="flex justify-between items-start mb-4">
                         <span class="px-3 py-1 ${colorClass} text-[10px] font-black rounded-full uppercase tracking-wider">
-                            ${estatus}
+                            ${estatusReal}
                         </span>
-                        <p class="text-[10px] text-slate-400 font-bold">${p['FECHA DE REGISTRO'] ? p['FECHA DE REGISTRO'].split(',')[0] : 'Reciente'}</p>
+                        <p class="text-[10px] text-slate-400 font-bold">${fechaReal.split(',')[0]}</p>
                     </div>
-                    <h4 class="font-black text-slate-900 mb-1 truncate">${p['ESTACIÓN'] || 'S/N'}</h4>
-                    <p class="text-xs text-slate-500 font-bold mb-4 uppercase tracking-tighter">${p['TIPO DE PRODUCTO'] || 'Combustible'} — ${p['LITROS'] || 0} L</p>
+                    <h4 class="font-black text-slate-900 mb-1 truncate">${estacionReal}</h4>
+                    <p class="text-xs text-slate-500 font-bold mb-4 uppercase tracking-tighter">
+                        ${productoReal} — ${Number(litrosReal).toLocaleString()} L
+                    </p>
                     <div class="flex justify-between items-center pt-4 border-t border-slate-50">
                         <p class="text-[10px] font-black text-slate-400 uppercase">Total</p>
-                        <p class="font-black text-slate-900">${p['TOTAL'] || '$0.00'}</p>
+                        <p class="font-black text-slate-900">${totalReal}</p>
                     </div>
                 </div>`;
         }).join('');
 
     } catch (e) {
-        console.error("Error crítico en Dashboard:", e);
+        console.error("Error crítico en cargarPedidosDashboard:", e);
     }
 }
 
@@ -995,7 +1001,7 @@ async function renderizarPedidosLista(filtro = 'Todos') {
     const userData = JSON.parse(localStorage.getItem('usuario'));
     if (!userData || !container) return;
 
-    // 1. Visibilidad del panel de control
+    // 1. Control de visibilidad del panel
     const controlProgramacion = document.getElementById('control-programacion');
     const esLogistica = userData.rol === 'Logistica_Policon' || userData.rol === 'Admin';
     if (controlProgramacion) {
@@ -1011,13 +1017,13 @@ async function renderizarPedidosLista(filtro = 'Todos') {
         const url = `/api/obtener-pedidos?estaciones=${encodeURIComponent(userData.estaciones)}&rol=${userData.rol}&fechaFiltro=${fechaSeleccionada}`;
         const response = await fetch(url);
         const data = await response.json();
-        let pedidosOriginales = data.pedidos || [];
+        let pedidosRaw = data.pedidos || [];
 
-        // --- LÓGICA HÍBRIDA DE FILTRADO ---
-        let pedidos = pedidosOriginales.filter(p => {
-            const statusActual = (p.estatus || p['ESTATUS'] || 'Pendiente').toLowerCase();
-            if (filtro === 'Todos') return true;
-            return statusActual === filtro.toLowerCase();
+        // --- FILTRADO SEGURO ---
+        // Buscamos el estatus en cualquier variante (estatus o ESTATUS)
+        let pedidos = pedidosRaw.filter(p => {
+            const estadoActual = (p.estatus || p['ESTATUS'] || 'Pendiente').toLowerCase();
+            return filtro === 'Todos' || estadoActual === filtro.toLowerCase();
         });
 
         if (pedidos.length === 0) {
@@ -1026,18 +1032,19 @@ async function renderizarPedidosLista(filtro = 'Todos') {
             return;
         }
 
-        // 2. RENDERIZADO CON MAPEO SEGURO
+        // 2. RENDERIZADO CON MAPEO DE CAMPOS MONGODB
         container.innerHTML = pedidos.map(p => {
-            // Mapeo de campos (Busca minúscula o Mayúscula del Excel)
+            // Mapeo seguro para evitar "S/N" o errores de referencia
             const id = p._id || p.id;
             const estacion = p.estacion || p['ESTACIÓN'] || 'S/N';
             const producto = p.producto || p['TIPO DE PRODUCTO'] || 'EXTRA';
             const litros = p.litros || p['LITROS'] || 0;
-            const estatus = p.estatus || p['ESTATUS'] || 'Pendiente';
+            const estatusValor = p.estatus || p['ESTATUS'] || 'Pendiente'; // Evita ReferenceError
             const total = p.total || p['TOTAL'] || '$0.00';
             
-            const estatusNormalizado = estatus.trim().toLowerCase();
+            const estatusNormalizado = estatusValor.trim().toLowerCase();
             
+            // Asignación de colores basada en el estatus real
             const color = estatusNormalizado === 'pendiente' ? 'orange' : 
                           estatusNormalizado === 'en ruta' ? 'purple' : 
                           estatusNormalizado === 'entregado' ? 'emerald' : 
@@ -1047,7 +1054,6 @@ async function renderizarPedidosLista(filtro = 'Todos') {
 
             return `
             <div class="group bg-white hover:bg-slate-50 border-b border-slate-100 flex items-center py-3 px-4 transition-all first:rounded-t-3xl last:rounded-b-3xl">
-                
                 <div class="pedido-checkbox-container w-10 flex justify-center">
                     ${permiteSeleccion ? 
                         `<input type="checkbox" value="${id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
@@ -1067,7 +1073,7 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                         <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estatus</span>
                         <div>
                             <span class="inline-block px-2 py-0.5 rounded-full bg-${color}-50 text-${color}-600 text-[9px] font-black uppercase">
-                                ${estatus}
+                                ${estatusValor}
                             </span>
                         </div>
                     </div>
@@ -1083,16 +1089,18 @@ async function renderizarPedidosLista(filtro = 'Todos') {
             </div>`;
         }).join('');
         
-        // Sincronizar UI
+        // Sincronizar estado de selección
         if (typeof modoSeleccionActivo !== 'undefined' && modoSeleccionActivo) {
             document.body.classList.add('modo-seleccion-activo');
+        } else {
+            document.body.classList.remove('modo-seleccion-activo');
         }
 
         if (typeof actualizarSeleccionados === 'function') actualizarSeleccionados();
 
     } catch (e) {
-        console.error("Error en renderizado:", e);
-        container.innerHTML = '<p class="text-red-500 text-center font-bold p-10">Error al cargar la lista.</p>';
+        console.error("Error crítico en renderizado:", e);
+        container.innerHTML = '<p class="text-red-500 text-center font-bold p-10">Error de conexión al servidor o datos corruptos.</p>';
     }
 }
 
