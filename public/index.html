@@ -140,35 +140,51 @@
                 <span class="font-black text-xl tracking-tighter text-white uppercase">FuelManager</span>
             </div>
 
-            <nav class="space-y-1">
-                <button onclick="irDashboard()" class="w-full flex items-center gap-4 p-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-900/20">
-                    <i class="fas fa-th-large"></i> Dashboard
+            <nav class="space-y-2">
+                <button onclick="irDashboard()" id="btn-nav-dashboard" 
+                    class="nav-item w-full flex items-center gap-4 p-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-900/20 transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <span>Dashboard</span>
                 </button>
                 
-                <button onclick="irMisEstaciones()" class="w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left">
-                    <i class="fas fa-store"></i> Mis Estaciones
+                <button onclick="irMisEstaciones()" id="btn-nav-estaciones" 
+                    class="nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group">
+                    <div class="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center group-hover:bg-blue-600/20 transition-all">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <span>Mis Estaciones</span>
                 </button>
 
-                <button onclick="irMisPedidos()" class="w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left">
-                    <i class="fas fa-clipboard-list"></i> Mis Pedidos
+                <button onclick="irMisPedidos()" id="btn-nav-pedidos" 
+                    class="nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group">
+                    <div class="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center group-hover:bg-blue-600/20 transition-all">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <span>Mis Pedidos</span>
                 </button>
 
-                <button onclick="irMisCréditos()" class="w-full flex items-center gap-4 p-4 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left">
-                    <i class="fas fa-wallet"></i> Mis Créditos
+                <button onclick="irMisCréditos()" id="btn-nav-creditos" 
+                    class="nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group">
+                    <div class="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center group-hover:bg-blue-600/20 transition-all">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <span>Mis Créditos</span>
                 </button>
             </nav>
         </div>
 
-        <div class="mt-auto p-8 border-t border-white/5">
+        <div class="mt-auto p-8 border-t border-white/5 bg-[#0b1222]">
             <div class="flex items-center gap-3 mb-6 text-white">
-                <div id="userInitials" class="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400 border border-white/10 text-xs uppercase">--</div>
-                <div>
-                    <p id="userName" class="text-sm font-bold">Cargando...</p>
-                    <p id="userStation" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">---</p>
+                <div id="userInitials" class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center font-black text-white border border-white/10 text-xs uppercase shadow-inner">--</div>
+                <div class="overflow-hidden">
+                    <p id="userName" class="text-sm font-black truncate">Cargando...</p>
+                    <p id="userStation" class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter truncate opacity-80">---</p>
                 </div>
             </div>
-            <button onclick="logout()" class="w-full text-left text-sm text-slate-500 hover:text-red-500 transition-colors font-bold">
-                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+            <button onclick="logout()" class="w-full flex items-center gap-3 text-sm text-slate-500 hover:text-red-500 transition-colors font-black uppercase tracking-widest">
+                <i class="fas fa-sign-out-alt text-xs"></i> Cerrar Sesión
             </button>
         </div>
     </aside>
