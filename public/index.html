@@ -513,10 +513,16 @@ async function cargarPedidosDashboard() {
         }
 
         container.innerHTML = data.pedidos.map(p => {
-            // CAMBIO: Usamos las llaves exactas del Servidor/Excel
-            const estatus = (p['ESTATUS'] || 'Pendiente');
-            const colorClass = estatus === 'Pendiente' ? 'bg-orange-50 text-orange-600' : 
-                               estatus === 'En Ruta' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600';
+            // LÓGICA INTELIGENTE: Busca en minúscula (DB) o en MAYÚSCULA (Excel)
+            const estatusReal = p.estatus || p['ESTATUS'] || 'Pendiente';
+            const estacionReal = p.estacion || p['ESTACIÓN'] || 'S/N';
+            const productoReal = p.producto || p['TIPO DE PRODUCTO'] || 'Combustible';
+            const litrosReal = p.litros || p['LITROS'] || 0;
+            const totalReal = p.total || p['TOTAL'] || '$0.00';
+            const fechaReal = p.fecha || p['FECHA DE REGISTRO'] || 'Reciente';
+
+            const colorClass = estatusReal === 'Pendiente' ? 'bg-orange-50 text-orange-600' : 
+                               estatusReal === 'En Ruta' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600';
 
             return `
                 <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 transition-all hover:scale-[1.02]">
