@@ -25,7 +25,7 @@
             display: none !important;
         }
 
-        
+        /* CORRECCIÓN: Solo reducimos el espacio en la lista de pedidos, no en el menú */
         body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-item .w-10.flex.justify-center {
             width: 20px; 
         }
@@ -128,6 +128,47 @@
             pointer-events: none;
             z-index: 5;
         }
+
+        /* --- 6. UNIFICACIÓN VISUAL (ESTILO ADMIN PARA TODOS) --- */
+
+        /* Ajuste de tamaño de texto debajo del nombre del usuario */
+        #userEstaciones, 
+        .user-info-container span:last-child { 
+            font-size: 9px !important; 
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* Protección de los contenedores de iconos en el sidebar */
+        nav .nav-item div {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 0.75rem !important; /* rounded-xl */
+            transition: all 0.3s ease;
+        }
+
+        /* Iluminación del botón activo (Azul Policon) */
+        .nav-item.active-link {
+            background-color: #2563eb !important;
+            color: white !important;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+        }
+
+        /* El cuadro del icono brilla cuando el botón está activo */
+        .nav-item.active-link div {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* El cuadro del icono es sutil cuando está inactivo */
+        .nav-item:not(.active-link) div {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
     </style>
 </head>
 <body class="h-screen overflow-hidden flex text-slate-800">
@@ -423,12 +464,13 @@
     }
 
    function configurarInterfazPorRol(rol) {
-    // 1. Identificación de roles
+    // 1. Identificación de roles y obtención de datos de usuario
     document.body.setAttribute('data-user-role', rol);
+    const userData = JSON.parse(localStorage.getItem('usuario')) || {};
     const esAdmin = (rol === 'Logistica_Policon' || rol === 'Admin');
     const esFletera = (rol === 'Fletera');
 
-    // 2. AJUSTE DE TEXTOS
+    // 2. AJUSTE DE TEXTOS DE CABECERA
     const titulo = document.getElementById('txtTituloPedidos');
     const subtitulo = document.getElementById('txtSubtituloPedidos');
     
@@ -438,7 +480,23 @@
         titulo.style.fontStyle = "normal";
     }
 
-    // 3. CONTROL DE HERRAMIENTAS ADMIN (Uso de clases, no de style directo)
+    // 3. RENDERIZADO DE INFORMACIÓN DE USUARIO (Tamaño de letra 9px unificado)
+    const userContainer = document.getElementById('userInfo'); // Asegúrate de que este ID exista en tu sidebar
+    if (userContainer && userData.nombre) {
+        userContainer.innerHTML = `
+            <div class="flex items-center gap-3 p-2">
+                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-inner">
+                    ${userData.nombre.substring(0,2).toUpperCase()}
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-white font-bold text-sm leading-tight">${userData.nombre}</span>
+                    <span id="userEstaciones" class="text-slate-400 font-bold uppercase tracking-wider">${userData.estaciones || ''}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 4. CONTROL DE HERRAMIENTAS ADMIN
     const herramientasAdmin = document.querySelectorAll('.admin-only');
     herramientasAdmin.forEach(el => {
         if (!esAdmin) {
@@ -449,44 +507,36 @@
         }
     });
 
-    // 4. LÓGICA DE NAVEGACIÓN (Corregida)
-    // Buscamos todos los botones dentro de nav
+    // 5. LÓGICA DE VISIBILIDAD DE NAVEGACIÓN
     const botones = document.querySelectorAll('nav button'); 
-    
     botones.forEach(btn => {
         const texto = btn.innerText.toLowerCase();
         
         if (esFletera) {
-            // Ocultar lo que no es para Fletera
             if (texto.includes('estaciones') || texto.includes('créditos')) {
                 btn.classList.add('hidden');
             } else {
                 btn.classList.remove('hidden');
             }
         } else {
-            // Gerentes y Admins ven todo lo estándar
             btn.classList.remove('hidden');
         }
     });
 
-    // 5. BOTONES EXTRA PARA FLETERAS (Estructura idéntica al Admin)
+    // 6. BOTONES EXTRA PARA FLETERAS (Estructura corregida para el nuevo CSS)
     if (esFletera && !document.getElementById('btn-operadores')) {
         const menuContainer = document.querySelector('nav');
         if (menuContainer) {
+            // Usamos la clase 'nav-item' para que hereden el estilo del CSS
             const btnClase = "nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group";
-            const iconClase = "w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 transition-all";
             
             const htmlNuevos = `
                 <button id="btn-operadores" onclick="irOperadores()" class="${btnClase}">
-                    <div class="${iconClase}">
-                        <i class="fas fa-users-cog"></i>
-                    </div>
+                    <div><i class="fas fa-users-cog"></i></div>
                     <span>Operadores</span>
                 </button>
                 <button id="btn-unidades" onclick="irUnidades()" class="${btnClase}">
-                    <div class="${iconClase}">
-                        <i class="fas fa-truck-moving"></i>
-                    </div>
+                    <div><i class="fas fa-truck-moving"></i></div>
                     <span>Unidades</span>
                 </button>`;
             menuContainer.insertAdjacentHTML('beforeend', htmlNuevos);
@@ -831,34 +881,37 @@ async function cargarPedidosDashboard() {
 // ==========================================
 
 function actualizarEstiloNavegacion(idActivo) {
+    // Seleccionamos todos los elementos con la clase nav-item
     const botones = document.querySelectorAll('.nav-item');
     
     botones.forEach(btn => {
-        const esElActivo = btn.id === idActivo;
-        const iconContainer = btn.querySelector('div');
-
-        if (esElActivo) {
-            btn.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/20');
-            btn.classList.remove('text-slate-400', 'hover:bg-white/5');
-            if (iconContainer) {
-                iconContainer.classList.add('bg-white/10');
-                iconContainer.classList.remove('bg-white/5');
-            }
+        // Si el ID coincide con el que queremos activar
+        if (btn.id === idActivo) {
+            btn.classList.add('active-link');
+            btn.classList.remove('text-slate-400');
         } else {
-            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/20');
-            btn.classList.add('text-slate-400', 'hover:bg-white/5');
-            if (iconContainer) {
-                iconContainer.classList.remove('bg-white/10');
-                iconContainer.classList.add('bg-white/5');
-            }
+            // Quitamos la clase de resaltado a los demás
+            btn.classList.remove('active-link');
+            btn.classList.add('text-slate-400');
         }
     });
 }
 
 function ocultarTodasLasVistas() {
-    ['dashboardView', 'estacionesView', 'pedidosView', 'vistaOperadores', 'vistaUnidades'].forEach(id => {
+    // Array con todos los IDs de las vistas de tu aplicación
+    const vistas = [
+        'dashboardView', 
+        'estacionesView', 
+        'pedidosView', 
+        'vistaOperadores', 
+        'vistaUnidades'
+    ];
+    
+    vistas.forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
+        if (el) {
+            el.classList.add('hidden');
+        }
     });
 }
 
