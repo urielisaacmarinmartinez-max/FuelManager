@@ -54,7 +54,7 @@ const serviceAccountAuth = new JWT({
 
 const doc = new GoogleSpreadsheet('1GALSgq5RhFv103c307XYeNoorQ5gAzxFR1Q64XMGr7Q', serviceAccountAuth);
 
-// --- FUNCIÓN DE SINCRONIZACIÓN INTEGRAL ---
+// --- FUNCIÓN DE SINCRONIZACIÓN INTEGRAL REPARADA ---
 async function sincronizarHojasAMongo() {
     try {
         const count = await Pedido.countDocuments();
@@ -64,41 +64,39 @@ async function sincronizarHojasAMongo() {
             const sheet = doc.sheetsByTitle['Pedidos'];
             const rows = await sheet.getRows();
             
-            const data = rows.map(r => ({
-                folio: r.get('FOLIO'),
-                'FECHA DE REGISTRO': r.get('FECHA DE REGISTRO'),
-                'BLOQUE DE PROGRAMACIÓN': r.get('BLOQUE DE PROGRAMACIÓN'),
-                'ESTACIÓN': r.get('ESTACIÓN'),
-                'TIPO DE PRODUCTO': r.get('TIPO DE PRODUCTO'),
-                'LITROS': Number(r.get('LITROS')) || 0,
-                'TOTAL': r.get('TOTAL'),
-                'FECHA DE ENTREGA': r.get('FECHA DE ENTREGA'),
-                'PRIORIDAD': r.get('PRIORIDAD'),
-                'ESTATUS': r.get('ESTATUS') || 'Pendiente',
-                'USUARIO': r.get('USUARIO'),
-                'ESTATUS DE CARGA': r.get('ESTATUS DE CARGA'),
-                'CONFIRMACIÓN O REUBICACIÓN': r.get('CONFIRMACIÓN O REUBICACIÓN'),
-                'ORDEN RELACIONADA': r.get('ORDEN RELACIONADA'),
-                'ORDEN': r.get('ORDEN'),
-                'FLETERA': r.get('FLETERA'),
-                'UNIDAD': r.get('UNIDAD'),
-                'PLACA 1': r.get('PLACA 1'),
-                'PLACA 2': r.get('PLACA 2'),
-                'OPERADOR': r.get('OPERADOR'),
-                'CANTIDAD EXACTA': r.get('CANTIDAD EXACTA'),
-                'ETA': r.get('ETA'),
-                'FECHA DE DESCARGA': r.get('FECHA DE DESCARGA'),
-                'TIPO DE OPERACIÓN': r.get('TIPO DE OPERACIÓN'),
-                'FACTURA': r.get('FACTURA'),
-                'COMPRA': r.get('COMPRA'),
-                'CANCELACIÓN DE PEDIDO': r.get('CANCELACIÓN DE PEDIDO'),
-                'MOTIVO DE CANCELACIÓN': r.get('MOTIVO DE CANCELACIÓN')
-            }));
+            // Obtenemos los encabezados reales de la hoja para no omitir ninguna columna
+            const headers = sheet.headerValues;
+
+            const data = rows.map(r => {
+                const rowData = {};
+
+                // 1. MAPEADO DINÁMICO: Captura cada columna del Excel (Mayúsculas, espacios, etc.)
+                headers.forEach(header => {
+                    rowData[header] = r.get(header);
+                });
+
+                // 2. COMPATIBILIDAD: Creamos "alias" en minúsculas para los filtros del Dashboard
+                // Esto evita que se rompan las funciones que ya tienes programadas
+                rowData.folio = r.get('FOLIO');
+                rowData.estacion = r.get('ESTACIÓN');
+                rowData.producto = r.get('TIPO DE PRODUCTO');
+                rowData.litros = Number(r.get('LITROS')) || 0;
+                rowData.estatus = r.get('ESTATUS') || 'Pendiente';
+                rowData.bloque = r.get('BLOQUE DE PROGRAMACIÓN');
+                rowData.fletera = r.get('FLETERA');
+                rowData.unidad = r.get('UNIDAD');
+                rowData.total = r.get('TOTAL');
+
+                return rowData;
+            });
 
             if (data.length > 0) {
+                // Insertamos todos los pedidos con su estructura completa
                 await Pedido.insertMany(data);
-                console.log(`✅ Migración exitosa: ${data.length} pedidos sincronizados.`);
+                console.log(`✅ Migración exitosa: ${data.length} pedidos sincronizados con todos los campos (Placas, Operador, ETA, etc.).`);
             }
+        } else {
+            console.log(`ℹ️ La base de datos ya contiene ${count} pedidos. No es necesaria la migración inicial.`);
         }
     } catch (e) { 
         console.error("❌ Error en sincronización:", e); 
