@@ -21,8 +21,8 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // --- ESQUEMA HÍBRIDO (Mantiene compatibilidad con Excel y MongoDB Atlas) ---
 const pedidoSchema = new mongoose.Schema({
+    // Llaves primarias y alias
     folio: { type: String, unique: true },
-    // Definimos las llaves en minúsculas que ya existen en tu MongoDB Atlas
     estacion: String,
     producto: String,
     litros: Number,
@@ -31,16 +31,42 @@ const pedidoSchema = new mongoose.Schema({
     bloque: String,
     fletera: String,
     unidad: String,
-    orden: String,
-    // Mantenemos estas por si el Excel las envía con nombres largos
+    prioridad: String,
+    usuario: String,
+
+    // MAPEO EXACTO DE TU EXCEL (Columnas A - Z)
+    'FOLIO': String,
     'FECHA DE REGISTRO': String,
     'BLOQUE DE PROGRAMACIÓN': String,
     'ESTACIÓN': String,
     'TIPO DE PRODUCTO': String,
+    'LITROS': String,
+    'TOTAL': String,
+    'FECHA DE ENTREGA': String,
+    'PRIORIDAD': String,
     'ESTATUS': String,
+    'USUARIO': String,
+    'ESTATUS DE CARGA': String,
+    'CONFIRMACIÓN O REUBICACIÓN': String,
+    'ORDEN RELACIONADA': String,
+    'ORDEN': String,
+    'FLETERA': String,
+    'UNIDAD': String,
+    'PLACA 1': String,
+    'PLACA 2': String,
+    'OPERADOR': String,
+    'CANTIDAD EXACTA': String,
+    'ETA': String,
+    'FECHA DE DESCARGA': String,
+    'TIPO DE OPERACIÓN': String,
+    'FACTURA': String,
+    'COMPRA': String,
+    'CANCELACIÓN DE PEDIDO': String,
+    'MOTIVO DE CANCELACIÓN': String,
+
     fechaRegistroDB: { type: Date, default: Date.now }
 }, { 
-    strict: false, // ¡ESTO ES VITAL! Permite leer cualquier campo aunque no esté aquí
+    strict: false, // Permite guardar campos que no hayamos definido por error
     collection: 'pedidos' 
 });
 
@@ -275,3 +301,4 @@ app.post('/api/confirmar-bloque', async (req, res) => {
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => console.log(`🚀 Servidor Híbrido Activo en puerto ${PORT}`));
+
