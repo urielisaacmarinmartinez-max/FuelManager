@@ -422,11 +422,12 @@
     }
 
    function configurarInterfazPorRol(rol) {
-    // 1. Guardamos el rol en el body para el CSS
+    // 1. Identificación de roles
     document.body.setAttribute('data-user-role', rol);
     const esAdmin = (rol === 'Logistica_Policon' || rol === 'Admin');
+    const esFletera = (rol === 'Fletera');
 
-    // 2. AJUSTE DE TEXTOS (Optimizado para no tocar estilos)
+    // 2. AJUSTE DE TEXTOS
     const titulo = document.getElementById('txtTituloPedidos');
     const subtitulo = document.getElementById('txtSubtituloPedidos');
     
@@ -436,44 +437,53 @@
         titulo.style.fontStyle = "normal";
     }
 
-    // 3. CONTROL DE HERRAMIENTAS ADMIN (Ocultar/Mostrar agresivo)
+    // 3. CONTROL DE HERRAMIENTAS ADMIN (Uso de clases, no de style directo)
     const herramientasAdmin = document.querySelectorAll('.admin-only');
     herramientasAdmin.forEach(el => {
-        el.style.setProperty('display', esAdmin ? 'flex' : 'none', 'important');
+        if (!esAdmin) {
+            el.classList.add('hidden');
+        } else {
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
     });
 
-    // 4. LÓGICA DE NAVEGACIÓN (Corregida para no romper el CSS del HTML)
-    const botones = document.querySelectorAll('nav .nav-item'); // Seleccionamos por la clase que creamos
+    // 4. LÓGICA DE NAVEGACIÓN (Corregida)
+    // Buscamos todos los botones dentro de nav
+    const botones = document.querySelectorAll('nav button'); 
     
     botones.forEach(btn => {
         const texto = btn.innerText.toLowerCase();
         
-        // Si es Fletera, ocultamos lo que no le corresponde
-        if (rol === 'Fletera') {
+        if (esFletera) {
+            // Ocultar lo que no es para Fletera
             if (texto.includes('estaciones') || texto.includes('créditos')) {
-                btn.style.setProperty('display', 'none', 'important');
+                btn.classList.add('hidden');
             } else {
-                btn.style.display = 'flex';
+                btn.classList.remove('hidden');
             }
         } else {
-            // Para Gerentes y Admins, nos aseguramos que se vea, pero NO tocamos sus clases
-            btn.style.display = 'flex';
+            // Gerentes y Admins ven todo lo estándar
+            btn.classList.remove('hidden');
         }
     });
 
-    // 5. BOTONES EXTRA PARA FLETERAS (Con la nueva estructura de iconos para que no se vean diferentes)
-    if (rol === 'Fletera') {
+    // 5. BOTONES EXTRA PARA FLETERAS (Estructura idéntica al Admin)
+    if (esFletera && !document.getElementById('btn-operadores')) {
         const menuContainer = document.querySelector('nav');
-        if (menuContainer && !document.getElementById('btn-operadores')) {
+        if (menuContainer) {
+            const btnClase = "nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group";
+            const iconClase = "w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 transition-all";
+            
             const htmlNuevos = `
-                <button id="btn-operadores" onclick="irOperadores()" class="nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group">
-                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 transition-all">
+                <button id="btn-operadores" onclick="irOperadores()" class="${btnClase}">
+                    <div class="${iconClase}">
                         <i class="fas fa-users-cog"></i>
                     </div>
                     <span>Operadores</span>
                 </button>
-                <button id="btn-unidades" onclick="irUnidades()" class="nav-item w-full flex items-center gap-4 p-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-2xl transition-all font-semibold text-left group">
-                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600 transition-all">
+                <button id="btn-unidades" onclick="irUnidades()" class="${btnClase}">
+                    <div class="${iconClase}">
                         <i class="fas fa-truck-moving"></i>
                     </div>
                     <span>Unidades</span>
