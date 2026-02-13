@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
         /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
         
         /* Esconder checkboxes y barra si NO es logística o admin */
@@ -24,8 +25,8 @@
             display: none !important;
         }
 
-        /* Estilo para que la lista se vea alineada aunque no haya checkbox */
-        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .w-10.flex.justify-center {
+        
+        body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-item .w-10.flex.justify-center {
             width: 20px; 
         }
 
