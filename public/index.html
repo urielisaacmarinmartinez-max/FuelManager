@@ -443,26 +443,31 @@
     let estacionesBase = [];
 
     async function initDashboard() {
-        const userData = JSON.parse(localStorage.getItem('usuario'));
-        if (!userData) {
-            window.location.href = '/login.html';
-            return;
-        }
-
-        document.getElementById('userName').innerText = userData.nombre;
-        document.getElementById('welcomeMsg').innerText = `Hola, ${userData.nombre.split(' ')[0]}`;
-        document.getElementById('userStation').innerText = userData.estaciones;
-        document.getElementById('userInitials').innerText = userData.nombre.substring(0, 2);
-
-        // Llamamos a la nueva función maestra de configuración
-        configurarInterfazPorRol(userData.rol);
-
-        await cargarEstaciones();
-        await cargarPedidosDashboard();
-
-        // ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
-        setInterval(sincronizar, 30000);
+    const userData = JSON.parse(localStorage.getItem('usuario'));
+    if (!userData) {
+        window.location.href = '/login.html';
+        return;
     }
+
+    // 1. Cargamos datos básicos de usuario
+    document.getElementById('userName').innerText = userData.nombre;
+    document.getElementById('welcomeMsg').innerText = `Hola, ${userData.nombre.split(' ')[0]}`;
+    document.getElementById('userStation').innerText = userData.estaciones;
+    document.getElementById('userInitials').innerText = userData.nombre.substring(0, 2);
+
+    // 2. Configuración de permisos y UI por Rol
+    configurarInterfazPorRol(userData.rol);
+
+    // 3. Carga de datos de la base
+    await cargarEstaciones();
+    await cargarPedidosDashboard();
+
+    // 4. EL TOQUE FINAL: Activamos visualmente el Dashboard al iniciar
+    irDashboard(); 
+
+    // 5. ACTUALIZACIÓN AUTOMÁTICA CADA 30 SEGUNDOS
+    setInterval(sincronizar, 30000);
+}
 
    function configurarInterfazPorRol(rol) {
     // 1. Identificación de roles y obtención de datos de usuario
