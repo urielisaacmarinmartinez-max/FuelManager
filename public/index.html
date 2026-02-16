@@ -824,11 +824,9 @@ async function cargarPedidosDashboard() {
     }
 };
 
-// ... (aquí terminan tus funciones de irDashboard o logout)
-
-
-    // Variable global para controlar la evidencia (Añadida)
+// --- VARIABLES Y FUNCIONES PARA EL TICKET ---
     let ticketCargado = false;
+    let datosImagenBase64 = null; // Guardará la imagen en formato texto para Google Drive
 
     // LÓGICA PARA EL MODAL DE TIRILLAS
     function abrirModalTirilla(id, nombre) {
@@ -844,10 +842,18 @@ async function cargarPedidosDashboard() {
             document.getElementById('volDiesel').value = est.vol_diesel ?? est.VOL_DIESEL ?? '';
         }
 
-        // Reset de la validación del ticket al abrir
+        // --- RESET DEL TICKET AL ABRIR ---
         ticketCargado = false;
+        datosImagenBase64 = null;
         const statusText = document.getElementById('ticket-status');
         if(statusText) statusText.innerHTML = '<span class="font-semibold">Click para subir ticket</span> o arrastra la foto';
+        
+        // Limpiar y ocultar vista previa
+        const preview = document.getElementById('ticket-preview');
+        if(preview) {
+            preview.src = "";
+            preview.classList.add('hidden');
+        }
         
         const btnGuardar = document.querySelector('#tirillaForm button[type="submit"]');
         if(btnGuardar) {
@@ -858,21 +864,46 @@ async function cargarPedidosDashboard() {
         document.getElementById('modalTirilla').classList.remove('hidden');
     }
 
-    // FUNCIÓN PARA VALIDAR EL ARCHIVO (Añadida)
+    // FUNCIÓN PARA VALIDAR EL ARCHIVO Y GENERAR VISTA PREVIA
     window.validarTicket = function(input) {
         const statusText = document.getElementById('ticket-status');
         const btnGuardar = document.querySelector('#tirillaForm button[type="submit"]');
+        const preview = document.getElementById('ticket-preview');
 
         if (input.files && input.files[0]) {
-            ticketCargado = true;
-            statusText.innerHTML = `<span class="text-green-600 font-bold">✅ Ticket listo: ${input.files[0].name}</span>`;
-            
-            if(btnGuardar) {
-                btnGuardar.disabled = false;
-                btnGuardar.classList.remove('opacity-50', 'cursor-not-allowed');
+            const file = input.files[0];
+
+            // Validar que no exceda 5MB (Base64 aumenta el peso un 33%)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("La foto es muy pesada. Intenta con una de menor resolución (Máx 5MB).");
+                input.value = "";
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // 1. Guardamos la imagen en Base64 (quitando el encabezado data:image/...)
+                datosImagenBase64 = e.target.result.split(',')[1];
+                
+                // 2. Mostramos la miniatura en el modal
+                if (preview) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                }
+                
+                ticketCargado = true;
+                statusText.innerHTML = `<span class="text-green-600 font-bold">✅ Ticket listo: ${file.name}</span>`;
+                
+                if(btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            };
+            reader.readAsDataURL(file);
+
         } else {
             ticketCargado = false;
+            datosImagenBase64 = null;
             if(btnGuardar) {
                 btnGuardar.disabled = true;
                 btnGuardar.classList.add('opacity-50', 'cursor-not-allowed');
@@ -883,38 +914,45 @@ async function cargarPedidosDashboard() {
     function cerrarModalTirilla() {
         document.getElementById('modalTirilla').classList.add('hidden');
         document.getElementById('tirillaForm').reset();
-        ticketCargado = false; // Reset de seguridad
+        ticketCargado = false;
+        datosImagenBase64 = null;
     }
 
     // ÚNICO CONTROLADOR PARA EL FORMULARIO DE TIRILLA
     document.getElementById('tirillaForm').onsubmit = async (e) => {
         e.preventDefault();
 
-        // Validación extra de seguridad (Añadida)
-        if (!ticketCargado) {
+        if (!ticketCargado || !datosImagenBase64) {
             alert("⚠️ Es obligatorio subir la evidencia (Ticket) antes de guardar.");
             return;
         }
 
         const btn = e.target.querySelector('button[type="submit"]');
         const idEstacion = document.getElementById('modalEstacionId').value;
+        const nombreEstacion = document.getElementById('modalEstacionNombre').innerText;
+        
+        // URL de tu Apps Script (Asegúrate de actualizarla cuando re-implementes con el código de Drive)
         const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbx6HlP_KKN_PjuWWHdhCMlvhKLnSFRqd_gZblZWnJjq9Q0pz7od6TA9KnevNowAcwY/exec';
 
+        // Preparamos el objeto con TODO lo necesario para Google Sheets y Drive
         const datos = {
             id_estacion: idEstacion,
+            nombre_estacion: nombreEstacion,
             vol_extra: parseFloat(document.getElementById('volExtra').value) || 0,
             vol_supreme: parseFloat(document.getElementById('volSupreme').value) || 0,
             vol_diesel: parseFloat(document.getElementById('volDiesel').value) || 0,
-            fecha_hora: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
+            fecha_hora: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+            // --- NUEVOS CAMPOS DE IMAGEN ---
+            archivo: datosImagenBase64,
+            nombreArchivo: `Ticket_${nombreEstacion.replace(/\s+/g, '_')}_${new Date().getTime()}.jpg`
         };
 
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo Ticket...';
 
         try {
             await fetch(URL_APPS_SCRIPT, {
                 method: 'POST',
-                // Usamos no-cors porque Apps Script suele dar problemas de CORS aunque guarde los datos
                 mode: 'no-cors', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
@@ -937,7 +975,6 @@ async function cargarPedidosDashboard() {
             btn.innerText = "Guardar Tirilla";
         }
     };
-
     // ==========================================
     // 1. SISTEMA DE NAVEGACIÓN (VISUAL)
     // ==========================================
@@ -1820,6 +1857,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
