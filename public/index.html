@@ -864,7 +864,7 @@ async function cargarPedidosDashboard() {
         document.getElementById('modalTirilla').classList.remove('hidden');
     }
 
-    // FUNCIÓN PARA VALIDAR EL ARCHIVO Y GENERAR VISTA PREVIA
+    // FUNCIÓN PARA VALIDAR EL ARCHIVO Y GENERAR VISTA PREVIA (Punto 3 Adaptado)
     window.validarTicket = function(input) {
         const statusText = document.getElementById('ticket-status');
         const btnGuardar = document.querySelector('#tirillaForm button[type="submit"]');
@@ -873,7 +873,14 @@ async function cargarPedidosDashboard() {
         if (input.files && input.files[0]) {
             const file = input.files[0];
 
-            // Validar que no exceda 5MB (Base64 aumenta el peso un 33%)
+            // Validar que sea imagen (startsWith corregido del video)
+            if (!file.type.startsWith('image/')) {
+                alert("Por favor sube un archivo de imagen válido (JPG o PNG).");
+                input.value = "";
+                return;
+            }
+
+            // Validar peso Máx 5MB
             if (file.size > 5 * 1024 * 1024) {
                 alert("La foto es muy pesada. Intenta con una de menor resolución (Máx 5MB).");
                 input.value = "";
@@ -881,8 +888,13 @@ async function cargarPedidosDashboard() {
             }
 
             const reader = new FileReader();
+            
+            // Animación de carga opcional
+            statusText.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando imagen...';
+
             reader.onload = function(e) {
-                // 1. Guardamos la imagen en Base64 (quitando el encabezado data:image/...)
+                // 1. Guardamos la imagen en Base64 limpiando el prefijo
+                // Esto es vital para que Utilities.base64Decode en Apps Script no falle
                 datosImagenBase64 = e.target.result.split(',')[1];
                 
                 // 2. Mostramos la miniatura en el modal
@@ -899,6 +911,12 @@ async function cargarPedidosDashboard() {
                     btnGuardar.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             };
+
+            reader.onerror = function() {
+                alert("Error al leer el archivo. Inténtalo de nuevo.");
+                statusText.innerText = "Error al cargar";
+            };
+
             reader.readAsDataURL(file);
 
         } else {
@@ -931,10 +949,9 @@ async function cargarPedidosDashboard() {
         const idEstacion = document.getElementById('modalEstacionId').value;
         const nombreEstacion = document.getElementById('modalEstacionNombre').innerText;
         
-        // URL de tu Apps Script (Asegúrate de actualizarla cuando re-implementes con el código de Drive)
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbygDDRWVg68tsQ5lPest_1yKfH5S1cmErEflf2MoUiXI0iqDIcnApYSXDXZDoqBLAVk/exec';
+        // URL de tu Apps Script (Asegúrate de actualizarla tras la nueva implementación)
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbyOFEVKMu4yUh3zW2t6TCI1eRzcJ2_T_0ulo6D5k41IiS_4lrNbuugdjC1uFsp5iWLO/exec';
 
-        // Preparamos el objeto con TODO lo necesario para Google Sheets y Drive
         const datos = {
             id_estacion: idEstacion,
             nombre_estacion: nombreEstacion,
@@ -942,7 +959,6 @@ async function cargarPedidosDashboard() {
             vol_supreme: parseFloat(document.getElementById('volSupreme').value) || 0,
             vol_diesel: parseFloat(document.getElementById('volDiesel').value) || 0,
             fecha_hora: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
-            // --- NUEVOS CAMPOS DE IMAGEN ---
             archivo: datosImagenBase64,
             nombreArchivo: `Ticket_${nombreEstacion.replace(/\s+/g, '_')}_${new Date().getTime()}.jpg`
         };
@@ -951,6 +967,8 @@ async function cargarPedidosDashboard() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo Ticket...';
 
         try {
+            // Cambiamos a 'cors' para poder recibir la respuesta JSON de éxito si es posible
+            // Aunque sea con no-cors, el try/catch capturará errores de red
             await fetch(URL_APPS_SCRIPT, {
                 method: 'POST',
                 mode: 'no-cors', 
@@ -958,6 +976,7 @@ async function cargarPedidosDashboard() {
                 body: JSON.stringify(datos)
             });
 
+            // Con no-cors no podemos leer la respuesta, pero si no hay error de red, asumimos éxito
             alert('¡Inventario y evidencia enviados correctamente!');
             cerrarModalTirilla();
             
@@ -1857,6 +1876,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
