@@ -10,7 +10,12 @@
 <style>
 
         /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
-        
+        body {
+    /* Esta es la propiedad mágica para reducir la escala visual */
+    zoom: 0.8; /* Para Chrome, Safari y navegadores modernos */
+    -moz-transform: scale(0.8); /* Para Firefox */
+    -moz-transform-origin: 0 0;
+}
         /* Esconder checkboxes y barra si NO es logística o admin */
         body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
             display: none !important;
@@ -1876,6 +1881,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
