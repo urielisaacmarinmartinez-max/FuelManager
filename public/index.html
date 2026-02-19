@@ -9,25 +9,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
-       html {
-    /* Mantenemos tu escala al 80% */
-    zoom: 0.8; 
-    /* Forzamos a que el alto sea del 100% de la ventana */
-    height: 100%;
-    /* Evitamos que el scroll horizontal aparezca por error */
-    overflow-x: hidden;
-  }
-
-  body {
-    /* Aseguramos que el fondo se extienda por toda la pantalla */
-    min-height: 100vh;
+       html, body {
     margin: 0;
     padding: 0;
-    /* Usamos el color de fondo exacto de tu diseño para que no haya franjas blancas */
-    background-color: #f8fafc; 
-    display: flex;
-    flex-direction: column;
-  }
+    width: 100%;
+    height: 100%;
+    background-color: #f8fafc; /* El gris claro de tu fondo */
+    overflow-x: hidden;
+}
+
+/* 2. Aplicamos la escala solo al contenido real */
+#app-container, .main-wrapper { 
+    /* Cambia '#app-container' por el ID del div que envuelve toda tu web */
+    transform: scale(0.8);
+    transform-origin: top center; /* Mantiene el contenido pegado arriba y centrado */
+    width: 125%; /* Compensamos el ancho (1 / 0.8 = 1.25) para que llene la pantalla */
+    margin-left: -12.5%; /* Centramos el exceso de ancho */
+}
      /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
         /* Esconder checkboxes y barra si NO es logística o admin */
         body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
@@ -1894,6 +1892,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
