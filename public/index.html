@@ -9,13 +9,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
-        /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
-        body {
-    /* Esta es la propiedad mágica para reducir la escala visual */
-    zoom: 0.8; /* Para Chrome, Safari y navegadores modernos */
-    -moz-transform: scale(0.8); /* Para Firefox */
-    -moz-transform-origin: 0 0;
-}
+       html {
+    /* Mantenemos tu escala al 80% */
+    zoom: 0.8; 
+    /* Forzamos a que el alto sea del 100% de la ventana */
+    height: 100%;
+    /* Evitamos que el scroll horizontal aparezca por error */
+    overflow-x: hidden;
+  }
+
+  body {
+    /* Aseguramos que el fondo se extienda por toda la pantalla */
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    /* Usamos el color de fondo exacto de tu diseño para que no haya franjas blancas */
+    background-color: #f8fafc; 
+    display: flex;
+    flex-direction: column;
+  }
+     /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
         /* Esconder checkboxes y barra si NO es logística o admin */
         body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
             display: none !important;
@@ -1881,6 +1894,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
