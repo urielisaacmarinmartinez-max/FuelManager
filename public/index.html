@@ -9,23 +9,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
-       html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
+    html {
+    background-color: #f8fafc; /* El gris claro de tu Dashboard */
     height: 100%;
-    background-color: #f8fafc; /* El gris claro de tu fondo */
-    overflow-x: hidden;
-}
+    margin: 0;
+  }
 
-/* 2. Aplicamos la escala solo al contenido real */
-#app-container, .main-wrapper { 
-    /* Cambia '#app-container' por el ID del div que envuelve toda tu web */
+  body {
+    background-color: #f8fafc;
+    margin: 0;
+    min-height: 100vh;
+    /* 2. Aplicamos el escalado aquí */
     transform: scale(0.8);
-    transform-origin: top center; /* Mantiene el contenido pegado arriba y centrado */
-    width: 125%; /* Compensamos el ancho (1 / 0.8 = 1.25) para que llene la pantalla */
-    margin-left: -12.5%; /* Centramos el exceso de ancho */
-}
+    /* 3. IMPORTANTE: Pegamos el contenido arriba a la izquierda */
+    transform-origin: top left; 
+    /* 4. Como encogimos al 0.8, debemos estirar el ancho un 25% para compensar (1 / 0.8 = 1.25) */
+    width: 125%; 
+    height: 125%;
+    overflow-x: hidden;
+  }
+
+      
      /* --- 1. REGLAS DE VISIBILIDAD POR ROL --- */
         /* Esconder checkboxes y barra si NO es logística o admin */
         body:not([data-user-role="Logistica_Policon"]):not([data-user-role="Admin"]) .pedido-checkbox {
@@ -1892,6 +1896,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
