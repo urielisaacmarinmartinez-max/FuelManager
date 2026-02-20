@@ -954,7 +954,7 @@ async function cargarPedidosDashboard() {
         const nombreEstacion = document.getElementById('modalEstacionNombre').innerText;
         
         // URL de tu Apps Script (Asegúrate de actualizarla tras la nueva implementación)
-        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbxVtyB-LoX8wF5LcBuGiUSqlXxPnuW_AhL3ytEsx-qKMn6_CR5gPQVFKuHZsgf85_jI/exec';
+        const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbybK8XEbWSakW8aWmBNXrbvf9u9qfyUyo8Nhcv0Zlz3NjvescJn_GuNzQEA-J5r5HSs/exec';
 
         const datos = {
             id_estacion: idEstacion,
@@ -1273,32 +1273,46 @@ async function renderizarPedidosLista(filtro = 'Todos') {
             return;
         }
 
-        // 2. RENDERIZADO CON MAPEO DE CAMPOS MONGODB
+     // 2. RENDERIZADO CON MAPEO DE CAMPOS
         container.innerHTML = pedidos.map(p => {
-            // Mapeo seguro para evitar "S/N" o errores de referencia
             const id = p._id || p.id;
             const estacion = p.estacion || p['ESTACIÓN'] || 'S/N';
             const producto = p.producto || p['TIPO DE PRODUCTO'] || 'EXTRA';
             const litros = p.litros || p['LITROS'] || 0;
-            const estatusValor = p.estatus || p['ESTATUS'] || 'Pendiente'; // Evita ReferenceError
+            const estatusGral = (p.estatus || p['ESTATUS'] || 'Pendiente').trim().toUpperCase();
+            const estatusCarga = (p.estatus_carga || p['ESTATUS DE CARGA'] || '').trim().toUpperCase();
             const total = p.total || p['TOTAL'] || '$0.00';
             
-            const estatusNormalizado = estatusValor.trim().toLowerCase();
-            
-            // Asignación de colores basada en el estatus real
-            const color = estatusNormalizado === 'pendiente' ? 'orange' : 
-                          estatusNormalizado === 'en ruta' ? 'purple' : 
-                          estatusNormalizado === 'entregado' ? 'emerald' : 
-                          estatusNormalizado === 'aceptado' ? 'blue' : 'slate';
+            // --- NUEVA LÓGICA DE COLORES BASADA EN TU DIAGRAMA ---
+            let color = 'slate';
+            let etiquetaTexto = estatusGral;
 
-            const permiteSeleccion = estatusNormalizado === 'pendiente' || estatusNormalizado === 'aceptado';
+            if (estatusCarga === "LISTO PARA ASIGNAR UNIDAD") {
+                color = 'amber'; // Color ámbar/naranja para llamar la atención de Logística
+                etiquetaTexto = "ESPERANDO UNIDAD";
+            } else if (estatusCarga === "LISTO PARA ASIGNAR ORDEN DE CARGA") {
+                color = 'indigo'; // Azul oscuro para indicar proceso administrativo pendiente
+                etiquetaTexto = "ESPERANDO ORDEN";
+            } else {
+                // Colores base para estatus generales
+                const normal = estatusGral.toLowerCase();
+                color = normal === 'pendiente' ? 'orange' : 
+                        normal === 'en ruta' ? 'purple' : 
+                        normal === 'entregado' ? 'emerald' : 
+                        normal === 'aceptado' ? 'blue' : 'slate';
+            }
+
+            // --- RESTRICCIÓN DE SELECCIÓN ---
+            // Solo permitimos seleccionar para programar si está ACEPTADO y aún no tiene bloque
+            // o si es un pedido nuevo PENDIENTE de validación.
+            const permiteSeleccion = (estatusGral === 'PENDIENTE' || estatusGral === 'ACEPTADO') && estatusCarga === '';
 
             return `
             <div class="group bg-white hover:bg-slate-50 border-b border-slate-100 flex items-center py-3 px-4 transition-all first:rounded-t-3xl last:rounded-b-3xl">
                 <div class="pedido-checkbox-container w-10 flex justify-center">
                     ${permiteSeleccion ? 
                         `<input type="checkbox" value="${id}" onchange="actualizarSeleccionados()" class="pedido-checkbox w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">` 
-                        : `<i class="fas fa-check text-emerald-400 text-xs"></i>`}
+                        : `<i class="fas ${estatusGral === 'ENTREGADO' ? 'fa-check-double text-emerald-500' : 'fa-clock text-slate-300'} text-xs"></i>`}
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 flex-1 items-center gap-4 ml-4">
@@ -1311,10 +1325,10 @@ async function renderizarPedidosLista(filtro = 'Todos') {
                         <span class="font-bold text-slate-600 text-xs uppercase">${producto} <span class="text-blue-500">— ${Number(litros).toLocaleString()}L</span></span>
                     </div>
                     <div class="hidden md:flex flex-col">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estatus</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Estatus Proceso</span>
                         <div>
-                            <span class="inline-block px-2 py-0.5 rounded-full bg-${color}-50 text-${color}-600 text-[9px] font-black uppercase">
-                                ${estatusValor}
+                            <span class="inline-block px-2 py-0.5 rounded-full bg-${color}-50 text-${color}-600 text-[9px] font-black uppercase border border-${color}-100">
+                                ${etiquetaTexto}
                             </span>
                         </div>
                     </div>
@@ -1880,6 +1894,7 @@ window.onload = initDashboard;
 </body>
 
 </html>
+
 
 
 
