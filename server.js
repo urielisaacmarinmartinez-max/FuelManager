@@ -176,7 +176,13 @@ app.post('/api/pedidos', async (req, res) => {
     const fechaMex = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
     try {
         const nuevoPedido = {
+            // Alias para MongoDB
             folio: p.folio,
+            estacion: p.estacion,
+            estatus: 'Pendiente',
+            
+            // Columnas EXACTAS para Google Sheets
+            'FOLIO': p.folio, 
             'FECHA DE REGISTRO': fechaMex,
             'ESTACIÓN': p.estacion,
             'TIPO DE PRODUCTO': p.combustible,
@@ -185,16 +191,19 @@ app.post('/api/pedidos', async (req, res) => {
             'FECHA DE ENTREGA': p.fecha_entrega,
             'PRIORIDAD': p.prioridad,
             'ESTATUS': 'Pendiente',
-            'USUARIO': p.usuario
+            'USUARIO': p.usuario,
+            'ESTATUS DE CARGA': '' // Se inicializa vacío
         };
         
         await Pedido.create(nuevoPedido);
-
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Pedidos'];
         await sheet.addRow(nuevoPedido);
         res.json({ success: true });
-    } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+    } catch (error) { 
+        console.error("Error al guardar:", error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 });
 
 // 4. OBTENER PEDIDOS (Corregido para Gerentes y Admin)
@@ -292,8 +301,11 @@ app.post('/api/confirmar-bloque', async (req, res) => {
         await Pedido.updateMany(
             { folio: { $in: ids } }, 
             { 
-                'BLOQUE DE PROGRAMACIÓN': bloque, 
+              $set{
+                'BLOQUE DE PROGRAMACIÓN': bloque,
+                'bloque': bloque, 
                 'ESTATUS': 'Aceptado',
+                'estatus': 'Aceptado',  
                 'ESTATUS DE CARGA': 'LISTO PARA ASIGNAR UNIDAD' // <-- CAMBIO CLAVE
             }
         );
@@ -302,24 +314,31 @@ app.post('/api/confirmar-bloque', async (req, res) => {
         await doc.loadInfo();
         const rows = await doc.sheetsByTitle['Pedidos'].getRows();
         for (let id of ids) {
-            const row = rows.find(r => r.get('FOLIO') === id.toString());
+            const row = rows.find(r => 
+                String(r.get('FOLIO')).trim() === String(id).trim()
+            );
+
             if (row) { 
                 row.set('BLOQUE DE PROGRAMACIÓN', bloque); 
                 row.set('ESTATUS', 'Aceptado'); 
-                row.set('ESTATUS DE CARGA', 'LISTO PARA ASIGNAR UNIDAD'); // <-- CAMBIO CLAVE
+                row.set('ESTATUS DE CARGA', 'LISTO PARA ASIGNAR UNIDAD');
                 await row.save(); 
+                console.log(`✅ Sheets: Pedido ${id} actualizado.`);
+            } else {
+                console.warn(`⚠️ Sheets: No se encontró el folio ${id}`);
             }
         }
         res.json({ success: true });
     } catch (error) { 
-        console.error("Error en confirmar-bloque:", error);
+        console.error("❌ Error en confirmar-bloque:", error);
         res.status(500).json({ success: false }); 
     }
-});;
+});
 
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => console.log(`🚀 Servidor Híbrido Activo en puerto ${PORT}`));
+
 
 
 
