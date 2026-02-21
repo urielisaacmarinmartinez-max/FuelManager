@@ -108,6 +108,7 @@ async function sincronizarHojasAMongo() {
                 rowObj.bloque = r.get('BLOQUE DE PROGRAMACIÓN');
                 rowObj.fletera = r.get('FLETERA');
                 rowObj.unidad = r.get('UNIDAD');
+                rowObj.estatus_carga = r.get('ESTATUS DE CARGA');
                 
                 return rowObj;
             });
@@ -319,5 +320,6 @@ app.post('/api/confirmar-bloque', async (req, res) => {
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => console.log(`🚀 Servidor Híbrido Activo en puerto ${PORT}`));
+
 
 
