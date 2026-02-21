@@ -282,23 +282,42 @@ app.post('/api/reubicar-pedido', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
-// 8. CONFIRMAR BLOQUE
+// 8. CONFIRMAR BLOQUE (CORREGIDO PARA LOGÍSTICA)
 app.post('/api/confirmar-bloque', async (req, res) => {
     const ids = req.body.idsPedidos || req.body.pedidos;
     const bloque = req.body.bloqueProgramacion || req.body.fechaProgramada;
     try {
-        await Pedido.updateMany({ folio: { $in: ids } }, { 'BLOQUE DE PROGRAMACIÓN': bloque, 'ESTATUS': 'Aceptado' });
+        // 1. Actualizamos MongoDB con el nuevo sub-estatus
+        await Pedido.updateMany(
+            { folio: { $in: ids } }, 
+            { 
+                'BLOQUE DE PROGRAMACIÓN': bloque, 
+                'ESTATUS': 'Aceptado',
+                'ESTATUS DE CARGA': 'LISTO PARA ASIGNAR UNIDAD' // <-- CAMBIO CLAVE
+            }
+        );
+
+        // 2. Actualizamos Google Sheets
         await doc.loadInfo();
         const rows = await doc.sheetsByTitle['Pedidos'].getRows();
         for (let id of ids) {
             const row = rows.find(r => r.get('FOLIO') === id.toString());
-            if (row) { row.set('BLOQUE DE PROGRAMACIÓN', bloque); row.set('ESTATUS', 'Aceptado'); await row.save(); }
+            if (row) { 
+                row.set('BLOQUE DE PROGRAMACIÓN', bloque); 
+                row.set('ESTATUS', 'Aceptado'); 
+                row.set('ESTATUS DE CARGA', 'LISTO PARA ASIGNAR UNIDAD'); // <-- CAMBIO CLAVE
+                await row.save(); 
+            }
         }
         res.json({ success: true });
-    } catch (error) { res.status(500).json({ success: false }); }
-});
+    } catch (error) { 
+        console.error("Error en confirmar-bloque:", error);
+        res.status(500).json({ success: false }); 
+    }
+});;
 
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => console.log(`🚀 Servidor Híbrido Activo en puerto ${PORT}`));
+
 
